@@ -20,8 +20,8 @@
 # -- Project information -----------------------------------------------------
 
 project = u'openshift-cn'
-copyright = u'2019, Kennethy'
-author = u'Kennethy'
+copyright = u'2019, kennethy'
+author = u'kennethy'
 
 # The short X.Y version
 version = u''
@@ -59,7 +59,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = u'zh_CN'
+language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -130,7 +130,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'openshift-cn.tex', u'openshift-cn Documentation',
-     u'Kennethy', 'manual'),
+     u'kennethy', 'manual'),
 ]
 
 
