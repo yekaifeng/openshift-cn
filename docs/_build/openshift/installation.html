@@ -83,10 +83,15 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">openshift 集群安装</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#id1">系统要求</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#id2">不适用场景</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">安装计划</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">系统要求</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">所有主机</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#master">Master</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node">Node</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#etcd">外部etcd</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">准备主机环境</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
@@ -157,14 +162,75 @@
   <div class="section" id="openshift">
 <h1>openshift 集群安装<a class="headerlink" href="#openshift" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
-<h2>系统要求<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>todo1</li>
-<li>todo2</li>
-<li>todo3</li>
-</ul>
+<h2>安装计划<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>在安装你openshift集群之前, 需要根据集群规模和资源情况, 来规划各个基础组件的部署安排. 如果有超过三台或者以上的机器,
+就可以考虑高可用了. Master, Node, Etcd, Router, ES, Prometheus, Grafana 等组件都支持多实例部署. 资源许可
+的情况下, etcd集群最好单独部署, 否则可以跟master部在一起. 从OKD 3.10开始, RHEL/CENTOS操作系统上以RPM形式部署,
+RHEL Atomic Host 则以容器镜像形式部署.</p>
+</div>
 <div class="section" id="id2">
-<h3>不适用场景<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<h2>系统要求<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>所有主机<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>主机之间可以互相通信, 也能访问外网. 如果是Router机器的话, 还需要配置DNS泛域解释.</li>
+<li>开启selinux</li>
+<li>开启 DNS 和 NetworkManager</li>
+<li>iptables是默认打开的, 需要打开端口有53, 4789, 8443, 10250, 2379, 2380等.详细见<a class="reference external" href="https://docs.okd.io/3.11/install/prerequisites.html#required-ports">官档页面</a></li>
+</ul>
+</div>
+<div class="section" id="master">
+<h3>Master<a class="headerlink" href="#master" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>操作系统: Fedora 21, CentOS 7.4, Red Hat Enterprise Linux (RHEL) 7.4 或者更新</li>
+<li>最少4核vCPU, 16GB内存</li>
+<li>40GB 磁盘空间 （/var目录)</li>
+</ul>
+</div>
+<div class="section" id="node">
+<h3>Node<a class="headerlink" href="#node" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>操作系统: Fedora 21, CentOS 7.4, Red Hat Enterprise Linux (RHEL) 7.4 或者更新</li>
+<li>最少1核vCPU, 8GB内存</li>
+<li>15GB 磁盘空间 （/var目录)</li>
+</ul>
+</div>
+<div class="section" id="etcd">
+<h3>外部etcd<a class="headerlink" href="#etcd" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>20GB 磁盘空间 （/var/lib/etcd 目录)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="id4">
+<h2>准备主机环境<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>一. 在阿里云申请了云主机后, 设置ssh key和主机间免密码登陆</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ssh-keygen</span>
+    <span class="c1"># for host in master.example.com node1.example.com node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done</span>
+</pre></div>
+</div>
+<p>二. 安装基础 rpm</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct</span>
+    <span class="c1"># yum update</span>
+    <span class="c1"># reboot</span>
+</pre></div>
+</div>
+<p>三. 安装 Ansible</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm</span>
+    <span class="c1"># sed -i -e &quot;s/^enabled=1/enabled=0/&quot; /etc/yum.repos.d/epel.repo</span>
+    <span class="c1"># yum -y --enablerepo=epel install ansible pyOpenSSL</span>
+    
+    <span class="c1"># cd ~</span>
+    <span class="c1"># git clone https://github.com/openshift/openshift-ansible</span>
+    <span class="c1"># cd openshift-ansible</span>
+    <span class="c1"># git checkout release-3.11</span>
+</pre></div>
+</div>
+<p>四. 安装 Docker, 默认配置即可. 需要定制化options的话, 在ansible hosts文件里定义.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install docker-1.13.1</span>
+    <span class="c1"># rpm -V docker-1.13.1</span>
+    <span class="c1"># docker version</span>
+</pre></div>
 </div>
 </div>
 </div>
