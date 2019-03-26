@@ -95,6 +95,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
 </ul>
 
             
@@ -204,26 +205,31 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 </div>
 <div class="section" id="id4">
 <h2>准备主机环境<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
-<p>一. 在阿里云申请了云主机后, 设置ssh key和主机间免密码登陆</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ssh-keygen</span>
-    <span class="c1"># for host in master.example.com node1.example.com node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done</span>
+<p>一. 在阿里云申请了云主机后, 在master上设置主机名, 设置ssh key和主机间免密码登陆</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># cat /etc/hosts</span>
+    <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.167</span>	<span class="n">node01</span><span class="o">-</span><span class="n">inner</span>
+    <span class="mf">172.26</span><span class="o">.</span><span class="mf">100.176</span>	<span class="n">node02</span><span class="o">-</span><span class="n">inner</span>
+    <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.168</span>	<span class="n">node03</span><span class="o">-</span><span class="n">inner</span>
+
+    <span class="c1"># ssh-keygen （所有主机）</span>
+    <span class="c1"># for host in node01-inner node02-inner node03-inner; do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done</span>
 </pre></div>
 </div>
-<p>二. 安装基础 rpm</p>
+<p>二. 安装基础 rpm （所有主机）</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct</span>
     <span class="c1"># yum update</span>
     <span class="c1"># reboot</span>
 </pre></div>
 </div>
-<p>三. 安装 Ansible</p>
+<p>三. 安装 Ansible （Master）</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm</span>
     <span class="c1"># sed -i -e &quot;s/^enabled=1/enabled=0/&quot; /etc/yum.repos.d/epel.repo</span>
     <span class="c1"># yum -y --enablerepo=epel install ansible pyOpenSSL</span>
     
     <span class="c1"># cd ~</span>
-    <span class="c1"># git clone https://github.com/openshift/openshift-ansible</span>
-    <span class="c1"># cd openshift-ansible</span>
-    <span class="c1"># git checkout release-3.11</span>
+    <span class="c1"># wget https://github.com/openshift/openshift-ansible/archive/openshift-ansible-3.11.100-1.tar.gz</span>
+    <span class="c1"># tar xzvf openshift-ansible-3.11.100-1.tar.gz</span>
+    <span class="c1"># cd openshift-ansible-openshift-ansible-3.11.100-1/</span>
 </pre></div>
 </div>
 <p>四. 安装 Docker, 默认配置即可. 需要定制化options的话, 在ansible hosts文件里定义.</p>

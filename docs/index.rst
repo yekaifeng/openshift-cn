@@ -12,6 +12,7 @@ Welcome to openshift-cn's documentation!
 
    openshift/installation
    openshift/configuration
+   openshift/troubleshooting
 
 Indices and tables
 ==================

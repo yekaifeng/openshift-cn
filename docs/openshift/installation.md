@@ -34,14 +34,19 @@ RHEL Atomic Host 则以容器镜像形式部署.
 
 ### 准备主机环境
 
-一. 在阿里云申请了云主机后, 设置ssh key和主机间免密码登陆
+一. 在阿里云申请了云主机后, 在master上设置主机名, 设置ssh key和主机间免密码登陆
 
 ~~~
-    # ssh-keygen
-    # for host in master.example.com node1.example.com node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done
+    # cat /etc/hosts
+    172.26.7.167	node01-inner
+    172.26.100.176	node02-inner
+    172.26.7.168	node03-inner
+
+    # ssh-keygen （所有主机）
+    # for host in node01-inner node02-inner node03-inner; do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done
 ~~~
 
-二. 安装基础 rpm
+二. 安装基础 rpm （所有主机）
 
 ~~~
     # yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct
@@ -49,7 +54,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # reboot
 ~~~
 
-三. 安装 Ansible
+三. 安装 Ansible （Master）
 
 ~~~
     # yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
@@ -57,9 +62,9 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # yum -y --enablerepo=epel install ansible pyOpenSSL
     
     # cd ~
-    # git clone https://github.com/openshift/openshift-ansible
-    # cd openshift-ansible
-    # git checkout release-3.11
+    # wget https://github.com/openshift/openshift-ansible/archive/openshift-ansible-3.11.100-1.tar.gz
+    # tar xzvf openshift-ansible-3.11.100-1.tar.gz
+    # cd openshift-ansible-openshift-ansible-3.11.100-1/
 ~~~
 
 四. 安装 Docker, 默认配置即可. 需要定制化options的话, 在ansible hosts文件里定义.
