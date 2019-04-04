@@ -49,7 +49,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
 二. 安装基础 rpm （所有主机）
 
 ~~~
-    # yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct
+    # yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct java-1.8.0-openjdk-headless python-passlib
     # yum update
     # reboot
 ~~~
@@ -74,5 +74,101 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # rpm -V docker-1.13.1
     # docker version
 ~~~
+
+五. 在控制台设置开放端口,打开 2379（etcd）,8443(管理页面)端口, 参考[官档](https://docs.okd.io/3.11/install/prerequisites.html#required-ports)
+
+![开放端口 2379](../_static/port_2379.png)
+![开放端口 8443](../_static/port_8443.png)
+
+### 正式执行安装
+
+一. 根据[官方文档](https://docs.okd.io/3.11/install/configuring_inventory_file.html), 准备好ansible host 文件. 保存到master主机/etc/ansible/host.
+
+二. 执行条件检查
+
+~~~
+    # ansible-playbook playbooks/prerequisites.yml |tee ../prerequisites.log
+~~~
+
+三. 执行安装. 如果途中失败的话, 修复问题后可重复执行.
+
+~~~
+    # ansible-playbook -vvv playbooks/deploy_cluster.yml |tee ../deploy_cluster.log
+~~~
+
+四. 安装后集群配置优化
+* 修改node-config-compute, 增加kube-served, system-served预留资源
+
+~~~
+    # oc project openshift-node
+    # oc edit cm node-config-compute
+    kubeletArguments: 
+    kube-reserved: 
+        - "cpu=200m,memory=512Mi” 
+    system-reserved: 
+        - "cpu=200m,memory=512Mi"
+~~~
+
+
+五. 安装后项目环境初始化
+* 添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换：
+
+~~~
+    # htpasswd -b /etc/origin/master/htpasswd admin {admin密码}
+    # oc login -u system:admin https://<admin portal>:8443
+    # oc adm policy add-cluster-role-to-user cluster-admin admin
+~~~
+
+* 替换system:authenticated 组的 scc, 使合法用户只能以非root运行容器. 需要注意的是, 业务镜像
+Dockerfile要指定运行USER/ID(非0), 并在deployment config 中指明 runAsUser字段.
+
+~~~
+    # oc adm policy add-scc-to-group nonroot system:authenticated
+    # oc adm policy remove-scc-from-group restricted system:authenticated
+~~~
+
+* Registry-console容器用的root用户在跑, 修复上述scc改动导致不能运行的问题
+
+~~~
+    # oc adm policy add-scc-to-user anyuid -z default -n default
+~~~
+
+* 禁止普通用户自建项目
+
+~~~
+    # oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
+~~~
+
+* 添加全局普通用户，将密码按需替换：
+
+~~~
+    # htpasswd -b /etc/origin/master/htpasswd readonly {密码}
+~~~
+
+* 添加项目管理用户，将密码按需替换：
+
+~~~
+    # htpasswd -b /etc/origin/master/htpasswd hyperion {密码}
+~~~
+
+* 添加项目,指定用户权限, 使网络可被全局访问
+
+~~~
+    # oc adm new-project hyperion --admin='hyperion' --description='Hyperion微服务中间层' --display-name='微服务中间层'
+    # oc adm policy add-role-to-user view readonly -n hyperion
+    # oc adm pod-network make-projects-global hyperion
+~~~
+
+* 访问控制台,检查是否安装成功 **https://portal.openshift.net.cn:8443/**
+
+
+### 集群卸载
+
+* 在安装目录的相同地方，运行
+
+~~~
+    # ansible-playbook playbooks/adhoc/uninstall.yml
+~~~
+
 
 

@@ -92,6 +92,8 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#id4">准备主机环境</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">正式执行安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">集群卸载</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
@@ -216,7 +218,7 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 </pre></div>
 </div>
 <p>二. 安装基础 rpm （所有主机）</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install wget git net-tools bind-utils yum-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct java-1.8.0-openjdk-headless python-passlib</span>
     <span class="c1"># yum update</span>
     <span class="c1"># reboot</span>
 </pre></div>
@@ -236,6 +238,95 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum install docker-1.13.1</span>
     <span class="c1"># rpm -V docker-1.13.1</span>
     <span class="c1"># docker version</span>
+</pre></div>
+</div>
+<p>五. 在控制台设置开放端口,打开 2379（etcd）,8443(管理页面)端口, 参考<a class="reference external" href="https://docs.okd.io/3.11/install/prerequisites.html#required-ports">官档</a></p>
+<p><img alt="../_images/port_2379.png" src="../_images/port_2379.png" />开放端口 2379
+<img alt="../_images/port_8443.png" src="../_images/port_8443.png" />开放端口 8443</p>
+</div>
+<div class="section" id="id5">
+<h2>正式执行安装<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<p>一. 根据<a class="reference external" href="https://docs.okd.io/3.11/install/configuring_inventory_file.html">官方文档</a>, 准备好ansible host 文件. 保存到master主机/etc/ansible/host.</p>
+<p>二. 执行条件检查</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook playbooks/prerequisites.yml |tee ../prerequisites.log</span>
+</pre></div>
+</div>
+<p>三. 执行安装. 如果途中失败的话, 修复问题后可重复执行.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook -vvv playbooks/deploy_cluster.yml |tee ../deploy_cluster.log</span>
+</pre></div>
+</div>
+<p>四. 安装后集群配置优化</p>
+<ul class="simple">
+<li>修改node-config-compute, 增加kube-served, system-served预留资源</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-node</span>
+    <span class="c1"># oc edit cm node-config-compute</span>
+    <span class="n">kubeletArguments</span><span class="p">:</span> 
+    <span class="n">kube</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
+        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi” </span>
+    <span class="n">system</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
+        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi&quot;</span>
+</pre></div>
+</div>
+<p>五. 安装后项目环境初始化</p>
+<ul class="simple">
+<li>添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换：</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># htpasswd -b /etc/origin/master/htpasswd admin {admin密码}</span>
+    <span class="c1"># oc login -u system:admin https://&lt;admin portal&gt;:8443</span>
+    <span class="c1"># oc adm policy add-cluster-role-to-user cluster-admin admin</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>替换system:authenticated 组的 scc, 使合法用户只能以非root运行容器. 需要注意的是, 业务镜像
+Dockerfile要指定运行USER/ID(非0), 并在deployment config 中指明 runAsUser字段.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-scc-to-group nonroot system:authenticated</span>
+    <span class="c1"># oc adm policy remove-scc-from-group restricted system:authenticated</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Registry-console容器用的root用户在跑, 修复上述scc改动导致不能运行的问题</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-scc-to-user anyuid -z default -n default</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>禁止普通用户自建项目</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc patch clusterrolebinding.rbac self-provisioners -p &#39;{&quot;subjects&quot;: null}&#39;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>添加全局普通用户，将密码按需替换：</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># htpasswd -b /etc/origin/master/htpasswd readonly {密码}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>添加项目管理用户，将密码按需替换：</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># htpasswd -b /etc/origin/master/htpasswd hyperion {密码}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>添加项目,指定用户权限, 使网络可被全局访问</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm new-project hyperion --admin=&#39;hyperion&#39; --description=&#39;Hyperion微服务中间层&#39; --display-name=&#39;微服务中间层&#39;</span>
+    <span class="c1"># oc adm policy add-role-to-user view readonly -n hyperion</span>
+    <span class="c1"># oc adm pod-network make-projects-global hyperion</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>访问控制台,检查是否安装成功 <strong>https://portal.openshift.net.cn:8443/</strong></li>
+</ul>
+</div>
+<div class="section" id="id6">
+<h2>集群卸载<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>在安装目录的相同地方，运行</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook playbooks/adhoc/uninstall.yml</span>
 </pre></div>
 </div>
 </div>
