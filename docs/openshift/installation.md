@@ -109,9 +109,19 @@ RHEL Atomic Host 则以容器镜像形式部署.
         - "cpu=200m,memory=512Mi"
 ~~~
 
+* 把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作
+
+~~~
+    # vi /etc/origin/node/pods/apiserver.yaml
+    resources:
+      requests:
+        cpu: 300m
+        memory: 500Mi
+    # master-restart api api
+~~~ 
 
 五. 安装后项目环境初始化
-* 添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换：
+* 添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换(新增的用户都要在oc登陆一次使数据能同步到etcd)
 
 ~~~
     # htpasswd -b /etc/origin/master/htpasswd admin {admin密码}
@@ -119,24 +129,18 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # oc adm policy add-cluster-role-to-user cluster-admin admin
 ~~~
 
-* 替换system:authenticated 组的 scc, 使合法用户只能以非root运行容器. 需要注意的是, 业务镜像
-Dockerfile要指定运行USER/ID(非0), 并在deployment config 中指明 runAsUser字段.
-
-~~~
-    # oc adm policy add-scc-to-group nonroot system:authenticated
-    # oc adm policy remove-scc-from-group restricted system:authenticated
-~~~
-
-* Registry-console容器用的root用户在跑, 修复上述scc改动导致不能运行的问题
-
-~~~
-    # oc adm policy add-scc-to-user anyuid -z default -n default
-~~~
-
 * 禁止普通用户自建项目
 
 ~~~
     # oc patch clusterrolebinding.rbac self-provisioners -p '{"subjects": null}'
+~~~
+
+* 把hawkular heapster和cassandra调度到infra节点
+
+~~~
+    # oc project openshift-infra
+    # oc patch rc heapster -p '{"spec": {"template": {"spec": {"nodeSelector": {"node-role.kubernetes.io/infra": "true"}}}}}'
+    # oc patch rc hawkular-cassandra-1 -p '{"spec": {"template": {"spec": {"nodeSelector": {"node-role.kubernetes.io/infra": "true"}}}}}'
 ~~~
 
 * 添加全局普通用户，将密码按需替换：

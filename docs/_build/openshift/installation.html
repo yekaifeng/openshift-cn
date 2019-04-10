@@ -268,9 +268,20 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
         <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi&quot;</span>
 </pre></div>
 </div>
+<ul class="simple">
+<li>把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/origin/node/pods/apiserver.yaml</span>
+    <span class="n">resources</span><span class="p">:</span>
+      <span class="n">requests</span><span class="p">:</span>
+        <span class="n">cpu</span><span class="p">:</span> <span class="mi">300</span><span class="n">m</span>
+        <span class="n">memory</span><span class="p">:</span> <span class="mi">500</span><span class="n">Mi</span>
+    <span class="c1"># master-restart api api</span>
+</pre></div>
+</div>
 <p>五. 安装后项目环境初始化</p>
 <ul class="simple">
-<li>添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换：</li>
+<li>添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换(新增的用户都要在oc登陆一次使数据能同步到etcd)</li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># htpasswd -b /etc/origin/master/htpasswd admin {admin密码}</span>
     <span class="c1"># oc login -u system:admin https://&lt;admin portal&gt;:8443</span>
@@ -278,23 +289,17 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 </pre></div>
 </div>
 <ul class="simple">
-<li>替换system:authenticated 组的 scc, 使合法用户只能以非root运行容器. 需要注意的是, 业务镜像
-Dockerfile要指定运行USER/ID(非0), 并在deployment config 中指明 runAsUser字段.</li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-scc-to-group nonroot system:authenticated</span>
-    <span class="c1"># oc adm policy remove-scc-from-group restricted system:authenticated</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li>Registry-console容器用的root用户在跑, 修复上述scc改动导致不能运行的问题</li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-scc-to-user anyuid -z default -n default</span>
-</pre></div>
-</div>
-<ul class="simple">
 <li>禁止普通用户自建项目</li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc patch clusterrolebinding.rbac self-provisioners -p &#39;{&quot;subjects&quot;: null}&#39;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>把hawkular heapster和cassandra调度到infra节点</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-infra</span>
+    <span class="c1"># oc patch rc heapster -p &#39;{&quot;spec&quot;: {&quot;template&quot;: {&quot;spec&quot;: {&quot;nodeSelector&quot;: {&quot;node-role.kubernetes.io/infra&quot;: &quot;true&quot;}}}}}&#39;</span>
+    <span class="c1"># oc patch rc hawkular-cassandra-1 -p &#39;{&quot;spec&quot;: {&quot;template&quot;: {&quot;spec&quot;: {&quot;nodeSelector&quot;: {&quot;node-role.kubernetes.io/infra&quot;: &quot;true&quot;}}}}}&#39;</span>
 </pre></div>
 </div>
 <ul class="simple">
