@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>日志模块 &mdash; openshift-cn 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="监控模块" href="openshift-monitor.html" />
+    <link rel="prev" title="openshift 集群配置管理" href="configuration.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> openshift-cn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">openshift 集群安装</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">日志模块</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">安装步骤</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">openshift-cn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>日志模块</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/openshift/openshift-logging.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>日志模块<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Openshift 日志模块集成了elastisearch, fluentd, kibana (efk)三个组件, 支持多实例高可用, host, ceph等多种外部存储.
+以下安装步骤了三个es实例的集群,支持pod, 容器, systemd, java应用的日志收集.</p>
+<div class="section" id="id2">
+<h2>安装步骤<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>参考<a class="reference external" href="https://docs.openshift.com/container-platform/3.11/install_config/aggregate_logging.html">官方文档</a></p>
+<ul class="simple">
+<li>下载ansible 安装脚本</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># wget https://github.com/openshift/openshift-ansible/archive/openshift-ansible-3.11.100-1.tar.gz</span>
+    <span class="c1"># tar xzvf openshift-ansible-3.11.100-1.tar.gz</span>
+    <span class="c1"># cd openshift-ansible-openshift-ansible-3.11.100-1/</span>
+
+    <span class="c1"># vi roles/openshift_logging_fluentd/templates/fluent.conf.j2</span>
+    <span class="mi">39</span> <span class="o">&lt;</span><span class="n">label</span> <span class="nd">@INGRESS</span><span class="o">&gt;</span>
+    <span class="mi">40</span> <span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">deploy_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;hosted&#39;</span><span class="p">,</span> <span class="s1">&#39;secure-host&#39;</span><span class="p">]</span> <span class="o">%</span><span class="p">}</span>
+    <span class="mi">41</span> <span class="o">&lt;</span><span class="n">match</span> <span class="n">time</span><span class="o">.**&gt;</span>
+    <span class="mi">42</span> <span class="nd">@type</span> <span class="n">detect_exceptions</span>
+    <span class="mi">43</span> <span class="nd">@label</span> <span class="nd">@INGRESS</span>
+    <span class="mi">44</span> <span class="n">remove_tag_prefix</span> <span class="n">time</span>
+    <span class="mi">45</span> <span class="n">message</span> <span class="n">log</span>
+    <span class="mi">46</span> <span class="n">languages</span> <span class="n">time</span>
+    <span class="mi">47</span> <span class="n">multiline_flush_interval</span> <span class="mf">0.1</span>
+    <span class="mi">48</span> <span class="o">&lt;/</span><span class="n">match</span><span class="o">&gt;</span>
+    <span class="mi">49</span> <span class="c1">## filters</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为计划安装日志模块节点打上label</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc label node node01-inner region/logging=true</span>
+    <span class="c1"># oc label node node02-inner region/logging=true</span>
+    <span class="c1"># oc label node node03-inner region/logging=true</span>
+    <span class="c1"># oc label node node01-inner &quot;region/logging-node&quot;=&quot;1&quot;</span>
+    <span class="c1"># oc label node node02-inner &quot;region/logging-node&quot;=&quot;2&quot;</span>
+    <span class="c1"># oc label node node03-inner &quot;region/logging-node&quot;=&quot;3&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>配置ansible hosts文件,增加日志组件相关参数</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/ansible/hosts.3.11</span>
+
+    <span class="c1"># 安装Logging：默认不安装</span>
+    <span class="c1"># 增加es cluster size, kibana node selector</span>
+    <span class="n">openshift_logging_install_logging</span><span class="o">=</span><span class="n">true</span>
+    <span class="n">openshift_logging_curator_nodeselector</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;region/logging&#39;</span><span class="p">:</span><span class="s1">&#39;true&#39;</span><span class="p">}</span>
+    <span class="n">openshift_logging_es_nodeselector</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;region/logging&#39;</span><span class="p">:</span><span class="s1">&#39;true&#39;</span><span class="p">}</span>
+    <span class="n">openshift_logging_kibana_nodeselector</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;region/logging&#39;</span><span class="p">:</span><span class="s1">&#39;true&#39;</span><span class="p">}</span>
+    <span class="n">openshift_logging_curator_run_timezone</span><span class="o">=</span><span class="n">Asia</span><span class="o">/</span><span class="n">Shanghai</span>
+    <span class="n">openshift_logging_es_memory_limit</span><span class="o">=</span><span class="mi">4</span><span class="n">Gi</span>
+    <span class="n">openshift_logging_es_cluster_size</span><span class="o">=</span><span class="mi">3</span>
+    <span class="n">openshift_logging_es_number_of_replicas</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">openshift_logging_es_number_of_shards</span><span class="o">=</span><span class="mi">3</span>
+    <span class="n">openshift_logging_kibana_replicas</span><span class="o">=</span><span class="mi">1</span>
+    
+    
+    <span class="c1"># 指定fluentd 缺省用xpmotors定制打包的镜像，指定es, kibana镜像</span>
+    <span class="n">openshift_logging_elasticsearch_image</span><span class="o">=</span><span class="n">openshift</span><span class="o">/</span><span class="n">origin</span><span class="o">-</span><span class="n">logging</span><span class="o">-</span><span class="n">elasticsearch</span><span class="p">:</span><span class="n">v3</span><span class="o">.</span><span class="mf">11.0</span>
+    <span class="n">openshift_logging_kibana_image</span><span class="o">=</span><span class="n">xpmotors</span><span class="o">/</span><span class="n">origin</span><span class="o">-</span><span class="n">logging</span><span class="o">-</span><span class="n">kibana</span><span class="p">:</span><span class="n">v3</span><span class="o">.</span><span class="mf">11.2</span>
+    <span class="n">openshift_logging_kibana_proxy_image</span><span class="o">=</span><span class="n">openshift</span><span class="o">/</span><span class="n">oauth</span><span class="o">-</span><span class="n">proxy</span><span class="p">:</span><span class="n">v1</span><span class="o">.</span><span class="mf">0.0</span>
+    <span class="n">openshift_logging_fluentd_image</span><span class="o">=</span><span class="n">xpmotors</span><span class="o">/</span><span class="n">origin</span><span class="o">-</span><span class="n">logging</span><span class="o">-</span><span class="n">fluentd</span><span class="p">:</span><span class="n">v3</span><span class="o">.</span><span class="mf">9.2</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>所有es主机创建日志存储目录, 用hostpath存储日志</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible logging -m shell -a &quot;mkdir -p /diskb/hyperion/es&quot;</span>
+    <span class="c1"># ansible logging -m shell -a &quot;chmod -R 777 /diskb/hyperion/es&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改内核参数</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible logging -m shell -a &quot;sysctl -w vm.max_map_count = 262144&quot;</span>
+    <span class="c1"># ansible logging -m shell -a &quot;echo &#39;vm.max_map_count = 262144&#39; &gt;&gt; /etc/sysctl.conf&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>执行安装</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook -i /etc/ansible/hosts.3.11 playbooks/openshift-logging/config.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改ES的SA，赋权，从而可挂载本地volume</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="c1"># oc adm policy add-scc-to-user privileged system:serviceaccount:openshift-logging:aggregated-logging-elasticsearch</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改网络，使日志中心可以被全局访问</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="c1"># oc adm pod-network make-projects-global openshift-logging</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改用户访问权限，使日志中心可以被特定用户访问</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-role-to-user edit hyperion -n openshift-logging</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为所有es data master dc打上label</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    for dc in $(oc get deploymentconfig --selector component=es -o name); do
+        oc scale $dc --replicas=0
+        oc patch $dc \
+           -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;elasticsearch&quot;,&quot;securityContext&quot;:{&quot;privileged&quot;: true}}]}}}}&#39;
+    done
+      
+    deploy=$(oc get deploymentconfig --selector component=es -o name)
+    deploy1=$(echo $deploy | cut -d &quot; &quot; -f 1)
+    deploy2=$(echo $deploy | cut -d &quot; &quot; -f 2)
+    deploy3=$(echo $deploy | cut -d &quot; &quot; -f 3)
+     
+    oc patch $deploy1 -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;nodeSelector&quot;:{&quot;region/logging&quot;: &quot;true&quot;,&quot;region/logging-node&quot;:&quot;1&quot;}}}}}&#39;
+    oc patch $deploy2 -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;nodeSelector&quot;:{&quot;region/logging&quot;: &quot;true&quot;,&quot;region/logging-node&quot;:&quot;2&quot;}}}}}&#39;
+    oc patch $deploy3 -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;nodeSelector&quot;:{&quot;region/logging&quot;: &quot;true&quot;,&quot;region/logging-node&quot;:&quot;3&quot;}}}}}&#39;
+</pre></div>
+</div>
+<ul class="simple">
+<li>作用本地mount到每个replica(假设存储被挂到每个Node的同个目录)</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    for dc in $(oc get deploymentconfig --selector component=es -o name); do
+        oc set volume $dc --add --overwrite --name=elasticsearch-storage --type=hostPath --path=/diskb/hyperion/es
+        oc rollout latest $dc
+        oc scale $dc --replicas=1
+    done
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="openshift-monitor.html" class="btn btn-neutral float-right" title="监控模块" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="configuration.html" class="btn btn-neutral float-left" title="openshift 集群配置管理" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, kennethy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

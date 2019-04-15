@@ -97,6 +97,8 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
 </ul>
 
@@ -255,31 +257,7 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook -vvv playbooks/deploy_cluster.yml |tee ../deploy_cluster.log</span>
 </pre></div>
 </div>
-<p>四. 安装后集群配置优化</p>
-<ul class="simple">
-<li>修改node-config-compute, 增加kube-served, system-served预留资源</li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-node</span>
-    <span class="c1"># oc edit cm node-config-compute</span>
-    <span class="n">kubeletArguments</span><span class="p">:</span> 
-    <span class="n">kube</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
-        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi” </span>
-    <span class="n">system</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
-        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi&quot;</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li>把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作</li>
-</ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/origin/node/pods/apiserver.yaml</span>
-    <span class="n">resources</span><span class="p">:</span>
-      <span class="n">requests</span><span class="p">:</span>
-        <span class="n">cpu</span><span class="p">:</span> <span class="mi">300</span><span class="n">m</span>
-        <span class="n">memory</span><span class="p">:</span> <span class="mi">500</span><span class="n">Mi</span>
-    <span class="c1"># master-restart api api</span>
-</pre></div>
-</div>
-<p>五. 安装后项目环境初始化</p>
+<p>四. 安装后项目环境初始化</p>
 <ul class="simple">
 <li>添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换(新增的用户都要在oc登陆一次使数据能同步到etcd)</li>
 </ul>
@@ -325,6 +303,36 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 <ul class="simple">
 <li>访问控制台,检查是否安装成功 <strong>https://portal.openshift.net.cn:8443/</strong></li>
 </ul>
+<p>五. 安装后集群配置优化</p>
+<ul class="simple">
+<li>修改node-config-compute, 增加kube-served, system-served预留资源</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-node</span>
+    <span class="c1"># oc edit cm node-config-compute</span>
+    <span class="n">kubeletArguments</span><span class="p">:</span> 
+    <span class="n">kube</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
+        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi” </span>
+    <span class="n">system</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
+        <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/origin/node/pods/apiserver.yaml</span>
+    <span class="n">resources</span><span class="p">:</span>
+      <span class="n">requests</span><span class="p">:</span>
+        <span class="n">cpu</span><span class="p">:</span> <span class="mi">300</span><span class="n">m</span>
+        <span class="n">memory</span><span class="p">:</span> <span class="mi">500</span><span class="n">Mi</span>
+    <span class="c1"># master-restart api api</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为确保iptables规则不会因重启丢失, 修改以下配置</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># sed -i &#39;s/IPTABLES_SAVE_ON_STOP=&quot;no&quot;/IPTABLES_SAVE_ON_STOP=&quot;yes&quot;/g&#39; /etc/sysconfig/iptables-config</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="id6">
 <h2>集群卸载<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>

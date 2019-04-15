@@ -1,0 +1,31 @@
+## Grafana
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-grafana-001
+  labels:
+    volume/type: pv-grafana
+spec:
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /diskb/export/grafana-001
+    server: node02-inner
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      volume/type: pv-grafana

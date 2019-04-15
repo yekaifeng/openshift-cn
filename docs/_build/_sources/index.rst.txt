@@ -12,6 +12,8 @@ Welcome to openshift-cn's documentation!
 
    openshift/installation
    openshift/configuration
+   openshift/openshift-logging
+   openshift/openshift-monitor
    openshift/troubleshooting
 
 Indices and tables

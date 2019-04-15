@@ -1,0 +1,34 @@
+## Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-prometheus-001
+  labels:
+    volume/type: pv-prometheus
+spec:
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  capacity:
+    storage: 2Gi
+  nfs:
+    path: /diskb/export/prometheus-001
+    server: node02-inner
+
+---
+## AlertManager
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-alertmanager-001
+  labels:
+    volume/type: pv-alertmanager
+spec:
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /diskb/export/alertmanager-001
+    server: node02-inner

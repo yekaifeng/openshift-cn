@@ -1,0 +1,53 @@
+  volumeClaimTemplates:
+  - metadata:
+      name: prometheus-k8s-db
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      selector:
+        matchLabels:
+          volume/type: pv-prometheus
+      resources:
+        requests:
+          storage: 2Gi
+
+  storage:
+    volumeClaimTemplates:
+      spec:
+        selector:
+          matchLabels:
+            volume/type: pv-prometheus
+        resources:
+          requests:
+            storage: 2Gi
+
+  storage:
+    volumeClaimTemplates:
+      spec:
+        selector:
+          matchLabels:
+            volume/type: pv-alertmanager
+        resources:
+          requests:
+            storage: 1Gi
+
+
+  volumes:
+  - name: grafana-storage
+    persistentVolumeClaim:
+      claimName: pv-grafana-001
+
+  volumes:
+  - name: grafana-storage
+    persistentVolumeClaim:
+      claimName: grafana
+
+/go/src/github.com/openshift/cluster-monitoring-operator/assets/grafana
+
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "/usr/bin/ln -sf /go/src/github.com/openshift/cluster-monitoring-operator/assets/grafana/custom/deployment.yaml /go/src/github.com/openshift/cluster-monitoring-operator/assets/grafana/deployment.yaml"]
+
+
+

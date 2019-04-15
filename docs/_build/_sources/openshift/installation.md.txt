@@ -96,31 +96,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # ansible-playbook -vvv playbooks/deploy_cluster.yml |tee ../deploy_cluster.log
 ~~~
 
-四. 安装后集群配置优化
-* 修改node-config-compute, 增加kube-served, system-served预留资源
-
-~~~
-    # oc project openshift-node
-    # oc edit cm node-config-compute
-    kubeletArguments: 
-    kube-reserved: 
-        - "cpu=200m,memory=512Mi” 
-    system-reserved: 
-        - "cpu=200m,memory=512Mi"
-~~~
-
-* 把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作
-
-~~~
-    # vi /etc/origin/node/pods/apiserver.yaml
-    resources:
-      requests:
-        cpu: 300m
-        memory: 500Mi
-    # master-restart api api
-~~~ 
-
-五. 安装后项目环境初始化
+四. 安装后项目环境初始化
 * 添加超级管理员用户，注意管理员用户不能扩散，将admin密码按需替换(新增的用户都要在oc登陆一次使数据能同步到etcd)
 
 ~~~
@@ -165,6 +141,35 @@ RHEL Atomic Host 则以容器镜像形式部署.
 
 * 访问控制台,检查是否安装成功 **https://portal.openshift.net.cn:8443/**
 
+五. 安装后集群配置优化
+* 修改node-config-compute, 增加kube-served, system-served预留资源
+
+~~~
+    # oc project openshift-node
+    # oc edit cm node-config-compute
+    kubeletArguments: 
+    kube-reserved: 
+        - "cpu=200m,memory=512Mi” 
+    system-reserved: 
+        - "cpu=200m,memory=512Mi"
+~~~
+
+* 把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作
+
+~~~
+    # vi /etc/origin/node/pods/apiserver.yaml
+    resources:
+      requests:
+        cpu: 300m
+        memory: 500Mi
+    # master-restart api api
+~~~ 
+
+* 为确保iptables规则不会因重启丢失, 修改以下配置
+
+~~~
+    # sed -i 's/IPTABLES_SAVE_ON_STOP="no"/IPTABLES_SAVE_ON_STOP="yes"/g' /etc/sysconfig/iptables-config
+~~~
 
 ### 集群卸载
 
