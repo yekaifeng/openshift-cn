@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-jenkins-001
+  labels:
+    volume/type: pv-jenkins
+spec:
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  capacity:
+    storage: 1Gi
+  nfs:
+    path: /diskb/export/jenkins-001
+    server: node02-inner
