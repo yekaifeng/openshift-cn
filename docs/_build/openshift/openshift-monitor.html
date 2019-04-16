@@ -1,0 +1,316 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>监控模块 &mdash; openshift-cn 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CI/CD 模块" href="cicd.html" />
+    <link rel="prev" title="日志模块" href="openshift-logging.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> openshift-cn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">openshift 集群安装</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">监控模块</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id2">安装步骤</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">openshift-cn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>监控模块</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/openshift/openshift-monitor.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>监控模块<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Openshift v3.11 集群监控以operator的形式把prometheus, grafana, alertmanager集中管理起来.
+然而,当cluster monitor operator作为最高管理者,只开放了部分api对象修改, 这就造成了二次定制开发的巨大限制.
+比如我要为grafana增加volumeClaim, 直接修改deployment spec是不行的, 因为operator侦测到对象变化,
+硬是又给你再改回来. 而operator层面没有把这个对象参数化, 并不提供修改的渠道. 实在是 …</p>
+<p>promethues只能使用storageClass作为存储对象接口, 为了支持方便的NFS, 这里需要进行一些改造.
+另外grafana 暂时也只能使用empty dir作为存储, 它的插件更新无法持久化.</p>
+<p><img alt="../_images/cluster-monitoring.png" src="../_images/cluster-monitoring.png" />Openshift cluster monitoring 架构</p>
+<div class="section" id="id2">
+<h2>安装步骤<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>配置NFS Server （node02-inner）</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/exports</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">prometheus</span><span class="o">-</span><span class="mi">001</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">prometheus</span><span class="o">-</span><span class="mi">002</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">alertmanager</span><span class="o">-</span><span class="mi">001</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">alertmanager</span><span class="o">-</span><span class="mi">002</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">alertmanager</span><span class="o">-</span><span class="mi">003</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">grafana</span><span class="o">-</span><span class="mi">001</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    
+    <span class="c1"># systemct restart nfs</span>
+    <span class="c1"># iptables -A OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为monitor节点打上label</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc label node node01-inner region/monitor=true</span>
+    <span class="c1"># oc label node node02-inner region/monitor=true</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改ansible hosts文件, 增加相关配置选项. 这里定义了storage_class_name是不存在的, 目的是为了后继修改方便.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/ansible/hosts</span>
+
+    <span class="c1"># 安装Prometheus operator</span>
+    <span class="c1">#</span>
+    <span class="c1"># Cluster monitoring is enabled by default, disable it by setting</span>
+    <span class="n">openshift_cluster_monitoring_operator_install</span><span class="o">=</span><span class="n">true</span>
+    <span class="c1">#</span>
+    <span class="c1"># Cluster monitoring configuration variables allow setting the amount of</span>
+    <span class="c1"># storage and storageclass requested through PersistentVolumeClaims.</span>
+    <span class="c1">#</span>
+    <span class="n">openshift_cluster_monitoring_operator_prometheus_storage_enabled</span><span class="o">=</span><span class="n">true</span>
+    <span class="n">openshift_cluster_monitoring_operator_alertmanager_storage_enabled</span><span class="o">=</span><span class="n">true</span>
+    
+    <span class="n">openshift_cluster_monitoring_operator_prometheus_storage_capacity</span><span class="o">=</span><span class="s2">&quot;2Gi&quot;</span>
+    <span class="n">openshift_cluster_monitoring_operator_alertmanager_storage_capacity</span><span class="o">=</span><span class="s2">&quot;1Gi&quot;</span>
+    
+    <span class="n">openshift_cluster_monitoring_operator_node_selector</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;region/monitor&#39;</span><span class="p">:</span><span class="s1">&#39;true&#39;</span><span class="p">}</span>
+    
+    <span class="c1"># external NFS support refer to Using Storage Classes for Existing Legacy Storage</span>
+    <span class="n">openshift_cluster_monitoring_operator_prometheus_storage_class_name</span><span class="o">=</span><span class="s2">&quot;nfs&quot;</span>
+    <span class="n">openshift_cluster_monitoring_operator_alertmanager_storage_class_name</span><span class="o">=</span><span class="s2">&quot;nfs&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改以下playbook operator config template文件, 这是让prometheus使用NFS的一个hack</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi roles/openshift_cluster_monitoring_operator/templates/cluster-monitoring-operator-config.j2</span>
+    
+    <span class="n">Line</span> <span class="mi">28</span>
+    <span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">openshift_cluster_monitoring_operator_prometheus_storage_enabled</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">%</span><span class="p">}</span>
+      <span class="n">volumeClaimTemplate</span><span class="p">:</span>
+        <span class="n">spec</span><span class="p">:</span>
+          <span class="n">selector</span><span class="p">:</span>
+            <span class="n">matchLabels</span><span class="p">:</span>
+              <span class="n">volume</span><span class="o">/</span><span class="nb">type</span><span class="p">:</span> <span class="n">pv</span><span class="o">-</span><span class="n">prometheus</span>
+          <span class="n">resources</span><span class="p">:</span>
+            <span class="n">requests</span><span class="p">:</span>
+              <span class="n">storage</span><span class="p">:</span> <span class="p">{{</span> <span class="n">openshift_cluster_monitoring_operator_prometheus_storage_capacity</span> <span class="p">}}</span>
+    <span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span>
+
+    <span class="n">Line</span> <span class="mi">46</span>
+    <span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">openshift_cluster_monitoring_operator_alertmanager_storage_enabled</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">%</span><span class="p">}</span>
+          <span class="n">volumeClaimTemplate</span><span class="p">:</span>
+            <span class="n">spec</span><span class="p">:</span>
+              <span class="n">selector</span><span class="p">:</span>
+                <span class="n">matchLabels</span><span class="p">:</span>
+                  <span class="n">volume</span><span class="o">/</span><span class="nb">type</span><span class="p">:</span> <span class="n">pv</span><span class="o">-</span><span class="n">alertmanager</span>
+              <span class="n">resources</span><span class="p">:</span>
+                <span class="n">requests</span><span class="p">:</span>
+                  <span class="n">storage</span><span class="p">:</span> <span class="p">{{</span> <span class="n">openshift_cluster_monitoring_operator_alertmanager_storage_capacity</span> <span class="p">}}</span>
+    <span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建alertmanager, promethues, grafana pv/pvc</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f prometheus-pv-nfs-001.yml</span>
+    <span class="c1"># oc create -f prometheus-pv-nfs-002.yml</span>
+    <span class="c1"># oc create -f grafana-pv-pvc-nfs.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>执行安装</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># ansible-playbook playbooks/openshift-monitoring/config.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>访问promehteus 入口页面 https://grafana-openshift-monitoring.apps.openshift.net.cn</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cicd.html" class="btn btn-neutral float-right" title="CI/CD 模块" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="openshift-logging.html" class="btn btn-neutral float-left" title="日志模块" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, kennethy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

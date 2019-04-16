@@ -1,0 +1,244 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>openshift 集群配置管理 &mdash; openshift-cn 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="日志模块" href="openshift-logging.html" />
+    <link rel="prev" title="openshift 集群安装" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> openshift-cn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">openshift 集群安装</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">openshift 集群配置管理</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tls-sni">为应用部署tls sni路由证书</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">openshift-cn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>openshift 集群配置管理</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/openshift/configuration.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="openshift">
+<h1>openshift 集群配置管理<a class="headerlink" href="#openshift" title="Permalink to this headline">¶</a></h1>
+<p>主要用于做一些devops的部署最佳实践。
+包括内容</p>
+<ul class="simple">
+<li>openshift：云平台运维脚本</li>
+<li>system：测试环境中间件依赖的单机版Docker部署配置。分环境作为目录</li>
+<li>tools：ops相关的工具类</li>
+</ul>
+<div class="section" id="tls-sni">
+<h2>为应用部署tls sni路由证书<a class="headerlink" href="#tls-sni" title="Permalink to this headline">¶</a></h2>
+<p>服务器名称指示（英语：Server Name Indication，简称SNI）是TLS的一个扩展协议，在该协议下，
+在握手过程开始时客户端告诉它正在连接的服务器要连接的主机名称。这允许服务器在相同的IP地址和TCP
+端口号上呈现多个证书，并且因此允许在相同的IP地址上提供多个安全（HTTPS）网站（或其他任何基于TLS的服务），
+而不需要所有这些站点使用相同的证书。</p>
+<p>一. 申请tls证书, 阿里云上有免费的,只有一年, 每个域名30个名额</p>
+<p>二. 参考<a class="reference external" href="https://docs.okd.io/3.11/day_two_guide/certificate_management.html#admin-solutions-certificate-management">官方文档</a>进行以下操作</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="c1"># oc project opeshift-console</span>
+  <span class="c1"># oc export route console -o yaml &gt; console.backup.yml</span>
+  <span class="c1"># oc delete route console</span>
+  <span class="c1"># oc create route reencrypt console-custom -n openshift-console \</span>
+  <span class="o">--</span><span class="n">hostname</span> <span class="n">console</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span> <span class="o">--</span><span class="n">key</span> <span class="n">console</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">key</span> \
+  <span class="o">--</span><span class="n">cert</span> <span class="n">console</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">crt</span> <span class="o">--</span><span class="n">ca</span><span class="o">-</span><span class="n">cert</span> <span class="n">console</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">ca</span> \
+  <span class="o">--</span><span class="n">service</span> <span class="n">console</span>
+  
+  <span class="c1"># oc project openshift-logging</span>
+  <span class="c1"># oc export route logging-kibana -o yaml &gt; route-logging-kibana.yml</span>
+  <span class="c1"># oc delete route logging-kibana</span>
+  <span class="c1"># oc create route reencrypt logging-kibana -n openshift-logging \</span>
+  <span class="o">--</span><span class="n">hostname</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span> <span class="o">--</span><span class="n">key</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">key</span> \
+  <span class="o">--</span><span class="n">cert</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">crt</span> <span class="o">--</span><span class="n">ca</span><span class="o">-</span><span class="n">cert</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">ca</span> \
+  <span class="o">--</span><span class="n">service</span> <span class="n">logging</span><span class="o">-</span><span class="n">kibana</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="openshift-logging.html" class="btn btn-neutral float-right" title="日志模块" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="openshift 集群安装" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, kennethy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
