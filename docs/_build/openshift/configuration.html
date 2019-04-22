@@ -85,6 +85,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">openshift 集群安装</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">openshift 集群配置管理</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#tls-sni">为应用部署tls sni路由证书</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker-registry">配置docker-registry外挂主机目录</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
@@ -187,6 +188,44 @@
   <span class="o">--</span><span class="n">hostname</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span> <span class="o">--</span><span class="n">key</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">key</span> \
   <span class="o">--</span><span class="n">cert</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">crt</span> <span class="o">--</span><span class="n">ca</span><span class="o">-</span><span class="n">cert</span> <span class="n">kibana</span><span class="o">.</span><span class="n">apps</span><span class="o">.</span><span class="n">openshift</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">cn</span><span class="o">.</span><span class="n">ca</span> \
   <span class="o">--</span><span class="n">service</span> <span class="n">logging</span><span class="o">-</span><span class="n">kibana</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="docker-registry">
+<h2>配置docker-registry外挂主机目录<a class="headerlink" href="#docker-registry" title="Permalink to this headline">¶</a></h2>
+<p>openshift docker registry 默认安装使用empty volume, 容器重启镜像信息不能持久化.
+通过挂载宿主机目录的方法, 把镜像保存在主机文件系统中, 重启后镜像仍然保留.</p>
+<ul class="simple">
+<li>在容器所在主机上,创建相应目录保存镜像</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># mkdir -p /diskb/registry</span>
+    <span class="c1"># chmod 777 -R /diskb/registry</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>关闭docker registry</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project default</span>
+    <span class="c1"># oc scale dc docker-registry --replicas=0</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>提升容器权限访问主机目录</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc patch dc/docker-registry -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;registry&quot;,&quot;securityContext&quot;:{&quot;privileged&quot;: false}}]}}}}&#39;</span>
+    <span class="c1"># oc adm policy add-scc-to-user hostmount-anyuid -z registry</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>设置主机目录</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc set volume dc/docker-registry --add --overwrite --name=registry-storage --type=hostPath --path=/diskb/registry</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>恢复registry服务</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc scale dc docker-registry --replicas=1</span>
 </pre></div>
 </div>
 </div>

@@ -88,6 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">问题汇总及解决方法</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#selinux-enforcing">阿里云镜像不支持selinux enforcing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#https-err-connection-reset">https服务不能用浏览器访问, 错误 <em>ERR_CONNECTION_RESET</em></a></li>
 </ul>
 </li>
 </ul>
@@ -162,6 +163,20 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># cat /etc/selinux/config</span>
       <span class="n">SELINUX</span><span class="o">=</span><span class="n">permissive</span>
     <span class="c1"># reboot</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="https-err-connection-reset">
+<h2>https服务不能用浏览器访问, 错误 <em>ERR_CONNECTION_RESET</em><a class="headerlink" href="#https-err-connection-reset" title="Permalink to this headline">¶</a></h2>
+<p>因为阿里云的限制, 不能直接用433端口访问, 临时办法是其中一台节点上安装vnc server, 远程访问</p>
+<ul class="simple">
+<li>参考<a class="reference external" href="https://qizhanming.com/blog/2018/03/06/how-to-config-vnc-server-on-centos-7">安装vnc server</a>
+注意centos 7.6的vnc server有bug, 必须同时安装 GNOME才能启动成功.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># yum groupinstall &#39;GNOME Desktop&#39;</span>
+    <span class="c1"># systemctl start vncserver@:1</span>
+    <span class="c1"># iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 5901 -j ACCEPT</span>
+    <span class="c1"># 修改阿里云网络规则开放tcp 5901端口</span>
 </pre></div>
 </div>
 </div>

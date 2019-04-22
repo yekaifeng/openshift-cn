@@ -34,3 +34,46 @@
   --service logging-kibana
 ~~~
 
+### 配置docker-registry外挂主机目录
+openshift docker registry 默认安装使用empty volume, 容器重启镜像信息不能持久化.
+通过挂载宿主机目录的方法, 把镜像保存在主机文件系统中, 重启后镜像仍然保留.
+
+- 在容器所在主机上,创建相应目录保存镜像
+
+~~~
+    # mkdir -p /diskb/registry
+    # chmod 777 -R /diskb/registry
+~~~
+
+- 关闭docker registry
+
+~~~
+    # oc project default
+    # oc scale dc docker-registry --replicas=0
+~~~
+
+- 提升容器权限访问主机目录
+
+~~~
+    # oc patch dc/docker-registry -p '{"spec":{"template":{"spec":{"containers":[{"name":"registry","securityContext":{"privileged": false}}]}}}}'
+    # oc adm policy add-scc-to-user hostmount-anyuid -z registry
+~~~
+
+- 设置主机目录
+
+~~~
+    # oc set volume dc/docker-registry --add --overwrite --name=registry-storage --type=hostPath --path=/diskb/registry
+~~~
+
+- 恢复registry服务
+
+~~~
+    # oc scale dc docker-registry --replicas=1
+~~~
+
+
+
+
+
+
+

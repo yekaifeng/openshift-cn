@@ -168,6 +168,15 @@
 </ul>
 <p>下面以使用nfs作为存储保存jenkins 运行数据作为例子,展示安装过程.</p>
 <ul class="simple">
+<li>配置NFS Server （node02-inner）</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># vi /etc/exports</span>
+    <span class="o">/</span><span class="n">diskb</span><span class="o">/</span><span class="n">export</span><span class="o">/</span><span class="n">jenkins</span><span class="o">-</span><span class="mi">001</span> <span class="mf">172.26</span><span class="o">.</span><span class="mf">7.0</span><span class="o">/</span><span class="mi">8</span><span class="p">(</span><span class="n">rw</span><span class="p">,</span><span class="n">sync</span><span class="p">,</span><span class="n">all_squash</span><span class="p">)</span>
+    
+    <span class="c1"># systemct restart nfs</span>
+</pre></div>
+</div>
+<ul class="simple">
 <li>创建jenkin pv, 该卷被挂载到jenkins容器/var/lib/jenkins中. 前提Nfs server端目录已经创建好.</li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f jenkins-pv-nfs.yml</span>
