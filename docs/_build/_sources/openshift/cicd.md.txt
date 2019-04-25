@@ -36,5 +36,29 @@
 
 - 访问jenkins页面 https://jenkins-persistant-hyperion.apps.openshift.net.cn
 
+### 改造jenkins能够使用pipeline docker agent
+
+默认的安装的jenkins镜像里没有docker 命令binary,需要做以下改造使得此pipeline可用
+- 重新打包镜像 *openshift/jenkins-2-centos7:v3.11*
+- 挂载宿主机的/var/run/docker.sock入容器
+
+- 打包新镜像
+
+~~~
+    # docker build -t kennethye/jenkins-2-centos7:v3.11.1 .
+    # docker push kennethye/jenkins-2-centos7:v3.11.1
+~~~
+
+- 修改dc配置
+
+~~~
+    # oc scale dc jenkins-persistant --replicas=0
+    # oc adm policy add-scc-to-user hostmount-anyuid -z jenkins-persistant
+    # oc set volume dc/jenkins-persistant --add --overwrite --name=var-run-docker --type=hostPath --path=/var/run/docker.sock
+    # oc patch dc/jenkins-persistant -p '{"spec":{"template":{"spec":{"containers":[{"name":"jenkins","image": "kennethye/jenkins-2-centos7:v3.11.1", volumeMounts": [{"name": "var-run-docker", "mountPath": "/var/run/docker.sock"}] }]}}}}'
+    # oc scale dc jenkins-persistant --replicas=1
+~~~
+
+
 
 

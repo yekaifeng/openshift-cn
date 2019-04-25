@@ -88,6 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CI/CD 模块</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#jenkins">Jenkins 安装</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jenkinspipeline-docker-agent">改造jenkins能够使用pipeline docker agent</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
@@ -194,6 +195,29 @@
 <ul class="simple">
 <li>访问jenkins页面 https://jenkins-persistant-hyperion.apps.openshift.net.cn</li>
 </ul>
+</div>
+<div class="section" id="jenkinspipeline-docker-agent">
+<h2>改造jenkins能够使用pipeline docker agent<a class="headerlink" href="#jenkinspipeline-docker-agent" title="Permalink to this headline">¶</a></h2>
+<p>默认的安装的jenkins镜像里没有docker 命令binary,需要做以下改造使得此pipeline可用</p>
+<ul class="simple">
+<li>重新打包镜像 <em>openshift/jenkins-2-centos7:v3.11</em></li>
+<li>挂载宿主机的/var/run/docker.sock入容器</li>
+<li>打包新镜像</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># docker build -t kennethye/jenkins-2-centos7:v3.11.1 .</span>
+    <span class="c1"># docker push kennethye/jenkins-2-centos7:v3.11.1</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改dc配置</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc scale dc jenkins-persistant --replicas=0</span>
+    <span class="c1"># oc adm policy add-scc-to-user hostmount-anyuid -z jenkins-persistant</span>
+    <span class="c1"># oc set volume dc/jenkins-persistant --add --overwrite --name=var-run-docker --type=hostPath --path=/var/run/docker.sock</span>
+    <span class="c1"># oc patch dc/jenkins-persistant -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;jenkins&quot;,&quot;image&quot;: &quot;kennethye/jenkins-2-centos7:v3.11.1&quot;, volumeMounts&quot;: [{&quot;name&quot;: &quot;var-run-docker&quot;, &quot;mountPath&quot;: &quot;/var/run/docker.sock&quot;}] }]}}}}&#39;</span>
+    <span class="c1"># oc scale dc jenkins-persistant --replicas=1</span>
+</pre></div>
+</div>
 </div>
 </div>
 

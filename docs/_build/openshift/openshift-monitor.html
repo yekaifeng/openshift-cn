@@ -87,6 +87,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">监控模块</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id2">安装步骤</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#etcd">配置etcd监控目标</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
@@ -261,6 +262,51 @@
 <ul class="simple">
 <li>访问promehteus 入口页面 https://grafana-openshift-monitoring.apps.openshift.net.cn</li>
 </ul>
+</div>
+<div class="section" id="etcd">
+<h2>配置etcd监控目标<a class="headerlink" href="#etcd" title="Permalink to this headline">¶</a></h2>
+<p>不管etcd是安装在哪里, 配置要做的事情是在prometheus 配置里增加scrape target, 把etcd client证书挂载进prometheus,
+让prometheus可读取.</p>
+<p>但是在operator的框架下, 只开放很少一部分的可配置功能, etcd监控就是其中之一. 本来简单的改scrape taget的事情,
+需要修改clustr monitor config, 由cluster operator去增加etcd ServiceMonitor对象, 同步到secret/prometheus-k8s,
+promethues pod 内部的prometheus-config-reloader检测到文件变化,再生成真正的配置给prometheus.</p>
+<p>配置同步链条太长, 大大增加了定制化的困难, 减低配置的灵活度.</p>
+<p><a class="reference external" href="https://docs.openshift.com/container-platform/3.11/install_config/prometheus_cluster_monitoring.html#configuring-etcd-monitoring">参考文档</a></p>
+<ul class="simple">
+<li>修改ConfigMap cluster-monitoring-config, 增加etcd监控target ip地址</li>
+</ul>
+<p><img alt="../_images/promethues-monitor-etcd-config01.png" src="../_images/promethues-monitor-etcd-config01.png" />配置etcd ip</p>
+<ul class="simple">
+<li>创建包含etcd client证书的文件 etcd-cert-secret.yaml</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># cat &lt;&lt;-EOF &gt; etcd-cert-secret.yaml</span>
+    <span class="n">apiVersion</span><span class="p">:</span> <span class="n">v1</span>
+    <span class="n">data</span><span class="p">:</span>
+      <span class="n">etcd</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="n">ca</span><span class="o">.</span><span class="n">crt</span><span class="p">:</span> <span class="s2">&quot;$(cat /etc/origin/master/master.etcd-ca.crt | base64 --wrap=0)&quot;</span>
+      <span class="n">etcd</span><span class="o">-</span><span class="n">client</span><span class="o">.</span><span class="n">crt</span><span class="p">:</span> <span class="s2">&quot;$(cat /etc/origin/master/master.etcd-client.crt | base64 --wrap=0)&quot;</span>
+      <span class="n">etcd</span><span class="o">-</span><span class="n">client</span><span class="o">.</span><span class="n">key</span><span class="p">:</span> <span class="s2">&quot;$(cat /etc/origin/master/master.etcd-client.key | base64 --wrap=0)&quot;</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Secret</span>
+    <span class="n">metadata</span><span class="p">:</span>
+      <span class="n">name</span><span class="p">:</span> <span class="n">kube</span><span class="o">-</span><span class="n">etcd</span><span class="o">-</span><span class="n">client</span><span class="o">-</span><span class="n">certs</span>
+      <span class="n">namespace</span><span class="p">:</span> <span class="n">openshift</span><span class="o">-</span><span class="n">monitoring</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">Opaque</span>
+    <span class="n">EOF</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建新的secret对象</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc apply -f etcd-cert-secret.yaml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>理论上新增scrape taget后, prometheus会帮你重启生效配置. 如果不生效,则手动重启.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc scale statefulset prometheus-k8s --replicas=0</span>
+    <span class="c1"># oc scale statefulset prometheus-k8s --replicas=2</span>
+</pre></div>
+</div>
+<p><img alt="../_images/promethues-monitor-etcd-config02.png" src="../_images/promethues-monitor-etcd-config02.png" />监控etcd成功</p>
 </div>
 </div>
 
