@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CI/CD 模块 &mdash; openshift-cn 0.0.1 documentation</title>
+  <title>CI/CD 模块 &mdash; openshift-cn 0.0.2 documentation</title>
   
 
   
@@ -89,6 +89,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">CI/CD 模块</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#jenkins">Jenkins 安装</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#jenkinspipeline-docker-agent">改造jenkins能够使用pipeline docker agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jenkins-agent-mavendocker-in-docker-dind">改造jenkins-agent-maven能够运行docker in docker (dind)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jenkins-slavejekinks">添加jenkins slave进入jekinks集群步骤</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
@@ -160,7 +162,7 @@
 <h1>CI/CD 模块<a class="headerlink" href="#ci-cd" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="jenkins">
 <h2>Jenkins 安装<a class="headerlink" href="#jenkins" title="Permalink to this headline">¶</a></h2>
-<p>为了集成了jenkins组件, openshift 对jenkins 作了插件开发, 使用户可以以openshift的帐号一站式使用jenkins.
+<p>为了集成了jenkins组件, openshift 对jenkins 作了插件开发, 使用户可以以openshift的帐号一站式登录使用jenkins.
 这些插件包括: <a class="reference external" href="https://github.com/openshift/jenkins">链接</a></p>
 <ul class="simple">
 <li>OpenShift Client Plugin: 作为oc客户端连接api server操作pipeline等对象</li>
@@ -198,13 +200,14 @@
 </div>
 <div class="section" id="jenkinspipeline-docker-agent">
 <h2>改造jenkins能够使用pipeline docker agent<a class="headerlink" href="#jenkinspipeline-docker-agent" title="Permalink to this headline">¶</a></h2>
-<p>默认的安装的jenkins镜像里没有docker 命令binary,需要做以下改造使得此pipeline可用</p>
+<p>默认的安装的jenkins镜像里没有docker 命令binary, 也没有docker 执行环境.
+需要做以下改造使得此pipeline可用, 简称dind (docker in docker)</p>
 <ul class="simple">
 <li>重新打包镜像 <em>openshift/jenkins-2-centos7:v3.11</em></li>
 <li>挂载宿主机的/var/run/docker.sock入容器</li>
 <li>打包新镜像</li>
 </ul>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># docker build -t kennethye/jenkins-2-centos7:v3.11.1 .</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># docker build -t kennethye/jenkins-2-centos7:v3.11.1 -f Dockerfile.jenkins.repack .</span>
     <span class="c1"># docker push kennethye/jenkins-2-centos7:v3.11.1</span>
 </pre></div>
 </div>
@@ -216,6 +219,50 @@
     <span class="c1"># oc set volume dc/jenkins-persistant --add --overwrite --name=var-run-docker --type=hostPath --path=/var/run/docker.sock</span>
     <span class="c1"># oc patch dc/jenkins-persistant -p &#39;{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;containers&quot;:[{&quot;name&quot;:&quot;jenkins&quot;,&quot;image&quot;: &quot;kennethye/jenkins-2-centos7:v3.11.1&quot;, volumeMounts&quot;: [{&quot;name&quot;: &quot;var-run-docker&quot;, &quot;mountPath&quot;: &quot;/var/run/docker.sock&quot;}] }]}}}}&#39;</span>
     <span class="c1"># oc scale dc jenkins-persistant --replicas=1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="jenkins-agent-mavendocker-in-docker-dind">
+<h2>改造jenkins-agent-maven能够运行docker in docker (dind)<a class="headerlink" href="#jenkins-agent-mavendocker-in-docker-dind" title="Permalink to this headline">¶</a></h2>
+<p>默认的jenkins-agent-maven镜像没有docker客户端, 为了使容器化的jenkins agent能够具备镜像打包功能,
+需要对它进行二次打包.</p>
+<ul class="simple">
+<li>打包新镜像</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># docker build -t kennethye/jenkins-agent-maven-35-centos7:v3.11.1 -f ./Dockerfile-jenkins-agent-maven-3.5 .</span>
+    <span class="c1"># docker push kennethye/jenkins-agent-maven-35-centos7:v3.11.1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="jenkins-slavejekinks">
+<h2>添加jenkins slave进入jekinks集群步骤<a class="headerlink" href="#jenkins-slavejekinks" title="Permalink to this headline">¶</a></h2>
+<p>把jenkins slave以容器的形式运行, 加入master组合成完整的jenkins集群</p>
+<ul class="simple">
+<li>修改jenkins-persistant服务,添加jnlp port</li>
+</ul>
+<p><img alt="../_images/service-port-jnlp.png" src="../_images/service-port-jnlp.png" />jnlp port</p>
+<ul class="simple">
+<li>参考<a class="reference external" href="https://www.youtube.com/watch?v=GQjvUAmhBX8">教程</a>, 在jenkins master添加node</li>
+</ul>
+<p><img alt="../_images/jenkins-slave-new-node.png" src="../_images/jenkins-slave-new-node.png" />new node</p>
+<p><img alt="../_images/jenkins-slave-new-node-secret.png" src="../_images/jenkins-slave-new-node-secret.png" />get new node secret</p>
+<ul class="simple">
+<li>创建完成后, 保存以下信息</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">JENKINS_URL</span><span class="o">=</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">jenkins</span><span class="o">-</span><span class="n">persistant</span><span class="o">.</span><span class="n">hyperion</span><span class="o">.</span><span class="n">svc</span> <span class="p">(</span><span class="n">master的URL</span><span class="p">,</span> <span class="mi">50000</span><span class="n">端口要打开</span><span class="p">)</span>
+    <span class="n">JENKINS_SECRET</span><span class="o">=</span><span class="n">f6cxxxxxx</span>    <span class="p">(</span><span class="n">上一步创建node返回的密码信息</span><span class="p">)</span>
+    <span class="n">JENKINS_NAME</span><span class="o">=</span><span class="n">maven</span><span class="o">-</span><span class="n">slaves</span>   <span class="p">(</span><span class="n">上一步创建node的名字</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>在slave node节点启动docker, cpu内存的大小按实际分配. 注意不同node节点的secret和名字是不一样的.
+必须在master上已经有记录,才能注册得上.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># docker run -d --restart always --name jenkins-agent-maven \</span>
+    <span class="o">-</span><span class="n">v</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">docker</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">docker</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span><span class="n">rw</span> \
+    <span class="o">--</span><span class="n">cpu</span><span class="o">-</span><span class="n">shares</span> <span class="mi">1024</span> <span class="o">--</span><span class="n">memory</span> <span class="mi">2</span><span class="n">G</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;JENKINS_URL=http://jenkins-persistant.hyperion.svc&#39;</span> \
+    <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;JENKINS_SECRET=f6cxxxxxx&#39;</span> <span class="o">-</span><span class="n">e</span> <span class="s1">&#39;JENKINS_NAME=maven-slaves&#39;</span> \
+    <span class="n">kennethye</span><span class="o">/</span><span class="n">jenkins</span><span class="o">-</span><span class="n">agent</span><span class="o">-</span><span class="n">maven</span><span class="o">-</span><span class="mi">35</span><span class="o">-</span><span class="n">centos7</span><span class="p">:</span><span class="n">v3</span><span class="o">.</span><span class="mf">11.1</span>
 </pre></div>
 </div>
 </div>
