@@ -1,0 +1,4 @@
+FROM openshift/jenkins-agent-maven-35-centos7:v3.11
+USER root
+RUN yum install -y docker
+USER 1001
