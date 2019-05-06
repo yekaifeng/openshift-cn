@@ -34,6 +34,7 @@
   --service logging-kibana
 ~~~
 
+---
 ### 配置docker-registry外挂主机目录
 openshift docker registry 默认安装使用empty volume, 容器重启镜像信息不能持久化.
 通过挂载宿主机目录的方法, 把镜像保存在主机文件系统中, 重启后镜像仍然保留.

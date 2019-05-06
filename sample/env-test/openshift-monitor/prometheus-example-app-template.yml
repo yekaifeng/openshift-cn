@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: prometheus-example-app-template
+  annotations:
+    openshift.io/display-name: prometheus-example-app
+    tags: "prometheus,quickstart,example-app"
+    iconClass: icon-go-gopher
+    description: "prometheus-example-app template"
+    openshift.io/provider-display-name: Kenneth
+    openshift.io/documentation-url: https://docs.openshift.net.cn
+    openshift.io/support-url: https://docs.openshift.net.cn
+labels:
+  app: prometheus-example-app
+
+parameters:
+- description: The version for the application image. (latest or 1.0.0)
+  name: VERSION
+  value: latest
+  required: true
+  displayName: Version name
+- description: The name for the application.
+  name: APPLICATION_NAME
+  value: prometheus-example-app
+  displayName: Application name
+- description: dev or test
+  name: ENV
+  value: prod
+  required: true
+- description: Image Name
+  name: IMAGE
+  value: quay.io/coreos/prometheus-example-app
+  required: true
+- description: Default subdomain
+  name: SUB_DOMAIN
+  value: apps.openshift.net.cn
+  required: true
+- description: Application Replicas
+  name: REPLICAS
+  value: "1"
+  required: true
+- description: CPU Limit
+  name: CPU_LIMIT
+  value: 500m
+  required: true
+- description: Memory Limit
+  name: MEM_LIMIT
+  value: 512Mi
+  required: true
+- description: CPU Request
+  name: CPU_REQUEST
+  value: 100m
+  required: true
+- description: Memory Request
+  name: MEM_REQUEST
+  value: 128Mi
+  required: true
+
+objects:
+
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}-route
+  spec:
+    host: ${APPLICATION_NAME}.${SUB_DOMAIN}
+    to:
+      kind: Service
+      name: ${APPLICATION_NAME}
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}
+    labels:
+      app: ${APPLICATION_NAME}
+      deploy.env: ${ENV}
+    annotations:
+      module: ${APPLICATION_NAME}
+      prometheus.io/scrape: 'true'
+      prometheus.io/scheme: 'http'
+      prometheus.io/port: '8080'
+      prometheus.io/path: '/metrics'
+  spec:
+    type: ClusterIP
+    selector:
+      deploymentconfig: "${APPLICATION_NAME}"
+    ports:
+    - name: 8080-tcp
+      port: 8080
+# https://github.com/openshift/origin/issues/10072
+      targetPort: 8080
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: ${APPLICATION_NAME}
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+      resources: {}
+    replicas: ${REPLICAS}
+    revisionHistoryLimit: 5
+    selector:
+      deploymentconfig: "${APPLICATION_NAME}"
+    template:
+      metadata:
+        labels:
+          deploymentconfig: "${APPLICATION_NAME}"
+          app: prometheus-example-app
+      spec:
+        containers:
+        - name: ${APPLICATION_NAME}
+          image: ${IMAGE}:${VERSION}
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: ${ENV}
+            - name: BUILD_TIME
+              value: ${BUILD_TIME}
+            - name: BRANCH_NAME
+              value: ${BRANCH_NAME}
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          terminationMessagePath: "/dev/termination-log"
+          resources:
+            limits:
+              memory: ${MEM_LIMIT}
+              cpu: ${CPU_LIMIT}
+            requests:
+              memory: ${MEM_REQUEST}
+              cpu: ${CPU_REQUEST}
+          securityContext:
+            capabilities: {}
+            privileged: false
+        nodeSelector:
+          node-role.kubernetes.io/compute: true
+  triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChange:
+          from:
+            kind: ImageStreamTag
+            name: ${IMAGE}:${VERSION}

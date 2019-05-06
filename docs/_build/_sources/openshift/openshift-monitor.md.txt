@@ -105,7 +105,7 @@ promethues只能使用storageClass作为存储对象接口, 为了支持方便�
 
 - 访问promehteus 入口页面 https://grafana-openshift-monitoring.apps.openshift.net.cn
 
-
+---
 ### 配置etcd监控目标
 不管etcd是安装在哪里, 配置要做的事情是在prometheus 配置里增加scrape target, 把etcd client证书挂载进prometheus,
 让prometheus可读取. 
@@ -153,6 +153,59 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 ~~~
 
 ![监控etcd成功](../_static/promethues-monitor-etcd-config02.png)
+
+---
+### 配置监控第三方应用的例子
+以下步骤演示如何监控一个go语言应用, 开放监控端口为8080, 路径为/metrics. 
+代码参考openshift cluster mornitoring的仓库.
+
+- 部署应用模板
+
+~~~
+    # oc create -f prometheus-example-app-template.yml -n hyperion
+~~~
+
+- 注入环境变量,使用模板创建应用,服务,路由
+
+~~~
+    # oc process prometheus-example-app-template -p ENV=test |oc create -f -
+    # oc get dc
+    NAME                     REVISION   DESIRED   CURRENT   TRIGGERED BY
+    prometheus-example-app   1          1         1         config
+    # oc get svc
+    NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)            AGE
+    prometheus-example-app    ClusterIP   172.30.8.240    <none>        8080/TCP           19m
+~~~
+
+- 修改应用所在的namespace label, 允许被监控
+
+~~~
+    # oc patch namespace hyperion -p '{"metadata": {"labels": {"openshift.io/cluster-monitoring": "true"}}}'
+~~~
+
+- 为prometheus-k8s sa增加允许访问项目内对象（主要是为了service）的权限
+
+~~~
+    # oc adm policy add-role-to-user view system:serviceaccount:openshift-monitoring:prometheus-k8s -n hyperion
+~~~
+
+- 为应用创建ServiceMonitor对象.
+*注意: endpoints下的port值与对应service下的port name一致*
+
+~~~
+    # oc create -f sericemonitor-prometheus-example-app.yml -n openshift-monitoring
+~~~
+
+- 配置成功后, 可以看到应用的监控配置与目标对象
+
+![监控配置成功](../_static/prometheus-example-app-scrape-config.png)
+
+![监控对象](../_static/prometheus-example-app-scrape-target.png)
+
+
+
+
+
 
 
 

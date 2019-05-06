@@ -36,6 +36,7 @@
 
 - 访问jenkins页面 https://jenkins-persistant-hyperion.apps.openshift.net.cn
 
+---
 ### 改造jenkins能够使用pipeline docker agent
 
 默认的安装的jenkins镜像里没有docker 命令binary, 也没有docker 执行环境.
@@ -60,6 +61,7 @@
     # oc scale dc jenkins-persistant --replicas=1
 ~~~
 
+---
 ### 改造jenkins-agent-maven能够运行docker in docker (dind)
 
 默认的jenkins-agent-maven镜像没有docker客户端, 为了使容器化的jenkins agent能够具备镜像打包功能,
@@ -72,6 +74,7 @@
     # docker push kennethye/jenkins-agent-maven-35-centos7:v3.11.1
 ~~~
 
+---
 ### 添加jenkins slave进入jekinks集群步骤
 
 把jenkins slave以容器的形式运行, 加入master组合成完整的jenkins集群

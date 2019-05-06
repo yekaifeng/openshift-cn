@@ -88,6 +88,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">监控模块</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id2">安装步骤</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#etcd">配置etcd监控目标</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">配置监控第三方应用的例子</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
@@ -263,6 +264,7 @@
 <li>访问promehteus 入口页面 https://grafana-openshift-monitoring.apps.openshift.net.cn</li>
 </ul>
 </div>
+<hr class="docutils" />
 <div class="section" id="etcd">
 <h2>配置etcd监控目标<a class="headerlink" href="#etcd" title="Permalink to this headline">¶</a></h2>
 <p>不管etcd是安装在哪里, 配置要做的事情是在prometheus 配置里增加scrape target, 把etcd client证书挂载进prometheus,
@@ -307,6 +309,54 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 </pre></div>
 </div>
 <p><img alt="../_images/promethues-monitor-etcd-config02.png" src="../_images/promethues-monitor-etcd-config02.png" />监控etcd成功</p>
+</div>
+<hr class="docutils" />
+<div class="section" id="id3">
+<h2>配置监控第三方应用的例子<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>以下步骤演示如何监控一个go语言应用, 开放监控端口为8080, 路径为/metrics.
+代码参考openshift cluster mornitoring的仓库.</p>
+<ul class="simple">
+<li>部署应用模板</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f prometheus-example-app-template.yml -n hyperion</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>注入环境变量,使用模板创建应用,服务,路由</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc process prometheus-example-app-template -p ENV=test |oc create -f -</span>
+    <span class="c1"># oc get dc</span>
+    <span class="n">NAME</span>                     <span class="n">REVISION</span>   <span class="n">DESIRED</span>   <span class="n">CURRENT</span>   <span class="n">TRIGGERED</span> <span class="n">BY</span>
+    <span class="n">prometheus</span><span class="o">-</span><span class="n">example</span><span class="o">-</span><span class="n">app</span>   <span class="mi">1</span>          <span class="mi">1</span>         <span class="mi">1</span>         <span class="n">config</span>
+    <span class="c1"># oc get svc</span>
+    <span class="n">NAME</span>                      <span class="n">TYPE</span>        <span class="n">CLUSTER</span><span class="o">-</span><span class="n">IP</span>      <span class="n">EXTERNAL</span><span class="o">-</span><span class="n">IP</span>   <span class="n">PORT</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>            <span class="n">AGE</span>
+    <span class="n">prometheus</span><span class="o">-</span><span class="n">example</span><span class="o">-</span><span class="n">app</span>    <span class="n">ClusterIP</span>   <span class="mf">172.30</span><span class="o">.</span><span class="mf">8.240</span>    <span class="o">&lt;</span><span class="n">none</span><span class="o">&gt;</span>        <span class="mi">8080</span><span class="o">/</span><span class="n">TCP</span>           <span class="mi">19</span><span class="n">m</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改应用所在的namespace label, 允许被监控</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc patch namespace hyperion -p &#39;{&quot;metadata&quot;: {&quot;labels&quot;: {&quot;openshift.io/cluster-monitoring&quot;: &quot;true&quot;}}}&#39;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为prometheus-k8s sa增加允许访问项目内对象（主要是为了service）的权限</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc adm policy add-role-to-user view system:serviceaccount:openshift-monitoring:prometheus-k8s -n hyperion</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>为应用创建ServiceMonitor对象.
+<em>注意: endpoints下的port值与对应service下的port name一致</em></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f sericemonitor-prometheus-example-app.yml -n openshift-monitoring</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>配置成功后, 可以看到应用的监控配置与目标对象</li>
+</ul>
+<p><img alt="../_images/prometheus-example-app-scrape-config.png" src="../_images/prometheus-example-app-scrape-config.png" />监控配置成功</p>
+<p><img alt="../_images/prometheus-example-app-scrape-target.png" src="../_images/prometheus-example-app-scrape-target.png" />监控对象</p>
 </div>
 </div>
 

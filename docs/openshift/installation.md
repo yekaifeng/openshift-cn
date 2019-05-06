@@ -32,6 +32,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
 
 * 20GB 磁盘空间 （/var/lib/etcd 目录)
 
+---
 ### 准备主机环境
 
 一. 在阿里云申请了云主机后, 在master上设置主机名, 设置ssh key和主机间免密码登陆
@@ -80,6 +81,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
 ![开放端口 2379](../_static/port_2379.png)
 ![开放端口 8443](../_static/port_8443.png)
 
+---
 ### 正式执行安装
 
 一. 根据[官方文档](https://docs.okd.io/3.11/install/configuring_inventory_file.html), 准备好ansible host 文件. 保存到master主机/etc/ansible/host.
@@ -171,6 +173,7 @@ RHEL Atomic Host 则以容器镜像形式部署.
     # sed -i 's/IPTABLES_SAVE_ON_STOP="no"/IPTABLES_SAVE_ON_STOP="yes"/g' /etc/sysconfig/iptables-config
 ~~~
 
+---
 ### 集群卸载
 
 * 在安装目录的相同地方，运行
