@@ -8,11 +8,17 @@ metadata:
   namespace: openshift-monitoring
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    interval: 20s
+  - interval: 20s
     port: 1936-tcp
     path: /metrics
     scheme: http
+    basicAuth:
+      password:
+        name: router-basic-auth
+        key: password
+      username:
+        name: router-basic-auth
+        key: user
   namespaceSelector:
     matchNames:
     - default

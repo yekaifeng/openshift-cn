@@ -155,6 +155,41 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 ![监控etcd成功](../_static/promethues-monitor-etcd-config02.png)
 
 ---
+### 配置监控Router
+Router的监控端口是1936, 以Basic Auth验证请求. 所以在ServiceMonitor中需要配置以下信息.
+
+- 获取Router的Basic Auth用户与密码
+
+~~~
+    # oc export dc router -n default |grep -A 1 STATS
+        - name: STATS_PASSWORD
+          value: wDMpjeGV1P
+        - name: STATS_PORT
+          value: "1936"
+        - name: STATS_USERNAME
+          value: admin
+~~~
+
+- 把用户名密码转成base64编码
+
+~~~
+    # echo 'admin' |base64
+    YWRtaW4K
+    # echo 'wDMpjeGV1P' |base64
+    d0RNcGplR1YxUAo=
+~~~
+
+- 创建 router basic auth secret和Service Monitor
+
+~~~
+    # oc project openshift-monitoring
+    # oc create -f router-basic-auth-secret.yml
+    # oc create -f router-monitor.yml
+~~~
+
+![监控Router成功](../_static/router-scrape-config.png)
+
+---
 ### 配置监控第三方应用的例子
 以下步骤演示如何监控一个go语言应用, 开放监控端口为8080, 路径为/metrics. 
 代码参考openshift cluster mornitoring的仓库.
@@ -198,7 +233,7 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 
 - 配置成功后, 可以看到应用的监控配置与目标对象
 
-![监控配置成功](../_static/prometheus-example-app-scrape-config.png)
+![监控三方应用成功](../_static/prometheus-example-app-scrape-config.png)
 
 ![监控对象](../_static/prometheus-example-app-scrape-target.png)
 

@@ -88,6 +88,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">监控模块</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id2">安装步骤</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#etcd">配置etcd监控目标</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#router">配置监控Router</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">配置监控第三方应用的例子</a></li>
 </ul>
 </li>
@@ -311,6 +312,41 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 <p><img alt="../_images/promethues-monitor-etcd-config02.png" src="../_images/promethues-monitor-etcd-config02.png" />监控etcd成功</p>
 </div>
 <hr class="docutils" />
+<div class="section" id="router">
+<h2>配置监控Router<a class="headerlink" href="#router" title="Permalink to this headline">¶</a></h2>
+<p>Router的监控端口是1936, 以Basic Auth验证请求. 所以在ServiceMonitor中需要配置以下信息.</p>
+<ul class="simple">
+<li>获取Router的Basic Auth用户与密码</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc export dc router -n default |grep -A 1 STATS</span>
+        <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">STATS_PASSWORD</span>
+          <span class="n">value</span><span class="p">:</span> <span class="n">wDMpjeGV1P</span>
+        <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">STATS_PORT</span>
+          <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;1936&quot;</span>
+        <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">STATS_USERNAME</span>
+          <span class="n">value</span><span class="p">:</span> <span class="n">admin</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>把用户名密码转成base64编码</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># echo &#39;admin&#39; |base64</span>
+    <span class="n">YWRtaW4K</span>
+    <span class="c1"># echo &#39;wDMpjeGV1P&#39; |base64</span>
+    <span class="n">d0RNcGplR1YxUAo</span><span class="o">=</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建 router basic auth secret和Service Monitor</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-monitoring</span>
+    <span class="c1"># oc create -f router-basic-auth-secret.yml</span>
+    <span class="c1"># oc create -f router-monitor.yml</span>
+</pre></div>
+</div>
+<p><img alt="../_images/router-scrape-config.png" src="../_images/router-scrape-config.png" />监控Router成功</p>
+</div>
+<hr class="docutils" />
 <div class="section" id="id3">
 <h2>配置监控第三方应用的例子<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p>以下步骤演示如何监控一个go语言应用, 开放监控端口为8080, 路径为/metrics.
@@ -355,7 +391,7 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 <ul class="simple">
 <li>配置成功后, 可以看到应用的监控配置与目标对象</li>
 </ul>
-<p><img alt="../_images/prometheus-example-app-scrape-config.png" src="../_images/prometheus-example-app-scrape-config.png" />监控配置成功</p>
+<p><img alt="../_images/prometheus-example-app-scrape-config.png" src="../_images/prometheus-example-app-scrape-config.png" />监控三方应用成功</p>
 <p><img alt="../_images/prometheus-example-app-scrape-target.png" src="../_images/prometheus-example-app-scrape-target.png" />监控对象</p>
 </div>
 </div>
