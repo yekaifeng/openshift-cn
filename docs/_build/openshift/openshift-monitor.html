@@ -90,6 +90,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#etcd">配置etcd监控目标</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#router">配置监控Router</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">配置监控第三方应用的例子</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">配置告警规则</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
@@ -393,6 +394,46 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 </ul>
 <p><img alt="../_images/prometheus-example-app-scrape-config.png" src="../_images/prometheus-example-app-scrape-config.png" />监控三方应用成功</p>
 <p><img alt="../_images/prometheus-example-app-scrape-target.png" src="../_images/prometheus-example-app-scrape-target.png" />监控对象</p>
+</div>
+<hr class="docutils" />
+<div class="section" id="id4">
+<h2>配置告警规则<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<p>告警规则的定客户化是通过添加prometheusrules CRD来实现的, 每新增一个CRD, 相应在cm/prometheus-k8s-rulefiles-0
+增加一个group, 并自动完成prometheus 的reload. 所以运维人员可以通过管理这些CRD, 很轻松的管理告警规则与分组.</p>
+<ul class="simple">
+<li>准备好告警规则配置文件, 注意kind为PrometheusRule, 例如</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    apiVersion: monitoring.coreos.com/v1
+    kind: PrometheusRule
+    metadata:
+      labels:
+        prometheus: k8s
+        role: alert-rules
+      name: prometheus-openshift-rules
+      namespace: openshift-monitoring
+    spec:
+      groups:
+      - name: &#39;Openshift 云平台告警&#39;
+        rules:
+        - alert: &#39;openshift-01-容器重启&#39;
+          expr: changes(container_start_time_seconds{id!~&quot;/(system|user).slice.*|/kubepods.slice/kubepods-burstable.slice/.*.slice&quot;, pod_name!~&quot;^.*-deploy$&quot;}[5m]) &gt; 1
+          labels:
+            level: &#39;警示&#39;
+            callbackUrl: &#39;https://prometheus-k8s-openshift-monitoring.apps.openshift.net.cn/graph?g0.range_input=1h&amp;g0.expr=container_start_time_seconds&amp;g0.tab=1&#39;
+          annotations:
+            description: &#39;{{ $labels.instance }}实例在过去5分钟内出现容器重启的现象&#39;
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建新的 prometheusrules对象</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f alert-rules/prometheusrules-openshift.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>后继自动触发规则注入, 重启prometheus.</li>
+</ul>
+<p><img alt="../_images/prometheusrules-01.png" src="../_images/prometheusrules-01.png" />告警规则创建成功</p>
 </div>
 </div>
 

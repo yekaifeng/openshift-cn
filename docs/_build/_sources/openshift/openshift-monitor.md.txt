@@ -237,8 +237,44 @@ Router的监控端口是1936, 以Basic Auth验证请求. 所以在ServiceMonitor
 
 ![监控对象](../_static/prometheus-example-app-scrape-target.png)
 
+---
+### 配置告警规则
+告警规则的定客户化是通过添加prometheusrules CRD来实现的, 每新增一个CRD, 相应在cm/prometheus-k8s-rulefiles-0
+增加一个group, 并自动完成prometheus 的reload. 所以运维人员可以通过管理这些CRD, 很轻松的管理告警规则与分组.
 
+- 准备好告警规则配置文件, 注意kind为PrometheusRule, 例如
 
+~~~
+    apiVersion: monitoring.coreos.com/v1
+    kind: PrometheusRule
+    metadata:
+      labels:
+        prometheus: k8s
+        role: alert-rules
+      name: prometheus-openshift-rules
+      namespace: openshift-monitoring
+    spec:
+      groups:
+      - name: 'Openshift 云平台告警'
+        rules:
+        - alert: 'openshift-01-容器重启'
+          expr: changes(container_start_time_seconds{id!~"/(system|user).slice.*|/kubepods.slice/kubepods-burstable.slice/.*.slice", pod_name!~"^.*-deploy$"}[5m]) > 1
+          labels:
+            level: '警示'
+            callbackUrl: 'https://prometheus-k8s-openshift-monitoring.apps.openshift.net.cn/graph?g0.range_input=1h&g0.expr=container_start_time_seconds&g0.tab=1'
+          annotations:
+            description: '{{ $labels.instance }}实例在过去5分钟内出现容器重启的现象'
+~~~
+
+- 创建新的 prometheusrules对象
+
+~~~
+    # oc create -f alert-rules/prometheusrules-openshift.yml
+~~~
+
+- 后继自动触发规则注入, 重启prometheus.
+
+![告警规则创建成功](../_static/prometheusrules-01.png)
 
 
 
