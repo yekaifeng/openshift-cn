@@ -276,6 +276,117 @@ Router的监控端口是1936, 以Basic Auth验证请求. 所以在ServiceMonitor
 
 ![告警规则创建成功](../_static/prometheusrules-01.png)
 
+### 业务应用集成Prometheus监控
+下面以一个spring boot 2项目为例子, 展示如何使用actuator和micrometer为应用接入prometheus监控体系.
+
+- 修改 _pom.xml_ , 增加包依赖
+
+~~~
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+~~~
+
+- 修改resource/application-dev.property, 开放prometheus监控子路径
+
+~~~
+    management.endpoints.web.exposure.include=health,info,metrics,prometheus
+    management.endpoint.prometheus.enabled=true
+    management.metrics.web.server.auto-time-requests=true
+    management.metrics.export.prometheus.enabled=true
+    management.security.enabled=false
+~~~
+
+- 在Controller.java中, 导入依赖包. 
+
+~~~
+    import java.util.concurrent.atomic.AtomicInteger;
+    
+    import io.micrometer.core.annotation.Timed;
+    import io.micrometer.core.instrument.Meter;
+    import io.micrometer.core.instrument.Counter;
+    import io.micrometer.core.instrument.MeterRegistry;
+~~~
+
+- 通用方法: 为每个api加上@Timed注解, 用于收集时间类计数, 如总次数, 平均每秒次数, 最大平均每秒次数.
+另外也可设置标签, 直方图统计(histogram)等属性.
+
+~~~
+    @ApiOperation(value="正常Hi", notes="参数：name")
+    @RequestMapping("/hi")
+    @Timed( value = "greeting_hi",
+            histogram = false,
+            extraTags = {"demo", "true"}
+    )
+    public String hi() {
+        return "Hi!";
+    }
+~~~
+
+- 如果需要自定义统计信息, 则通过 _MetricRegistry_ 构造计数器(counter)或者度量器(gauge).
+在业务函数方法中增加计数器/度量器调用.
+
+~~~
+    Counter myCounter;
+    AtomicInteger myGauge;
+    
+    public GreetingController(MeterRegistry registry){
+        // 注册名字为 my_counter 计数器衡量 /hi api
+        this.myCounter = registry.counter("my_counter"); 
+        // 注册名字为 my_gauge 度量器用于计算 myGauge对象的长度
+        this.myGauge = registry.gauge("my_gauge", new AtomicInteger(0));
+    }
+    
+    @ApiOperation(value="正常Hi", notes="参数：name")
+    @RequestMapping("/hi")
+    public String hi() {
+        // 增加计数对象值 myCounter
+        this.myCounter.increment();
+        return "Hi!";
+    }
+    
+    @ApiOperation(value="随机返回码Hi", notes="")
+    @GetMapping(value = "/randomStatusHi")
+    public ResponseEntity<String> randomStatusHi() {
+        int code = new Random().nextInt(100);
+        Integer result = randomStatus + code;
+        // 增加返回配置的状态码的概率
+        if (code % 10 == 0) {
+            result = randomStatus;
+        }
+        // 设置度量对象myGauge
+        this.myGauge.set(code);
+        return ResponseEntity.status(result).body("Random Status " + String.valueOf(result) + " Hi!");
+    }
+~~~
+
+- Maven构建, 执行jar包, 使spring boot RestController跑起来
+
+~~~
+    # mvn clean package
+    # java -jar target/gs-rest-service-0.1.0.jar --spring.profiles.active=dev
+~~~
+
+- 访问api /greeting/hi, /greeting/randomStatusHi, 模拟外部请求
+
+~~~
+    # curl http://localhost:8800/greeting/hi
+    # curl http://localhost:8800/greeting/randomStatusHi
+~~~
+
+- 检查prometheus metrics有关以上两个api的统计信息: _http://localhost:8800/actuator/prometheus_
+
+![greeting hi metrics](../_static/prometheus_greeting_hi.png)
+![random status hi gauge](../_static/prometheus_randomstatus_hi.png)
+
+
+
 
 
 

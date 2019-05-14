@@ -91,6 +91,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#router">配置监控Router</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id3">配置监控第三方应用的例子</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id4">配置告警规则</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prometheus">业务应用集成Prometheus监控</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
@@ -434,6 +435,116 @@ promethues pod 内部的prometheus-config-reloader检测到文件变化,再生�
 <li>后继自动触发规则注入, 重启prometheus.</li>
 </ul>
 <p><img alt="../_images/prometheusrules-01.png" src="../_images/prometheusrules-01.png" />告警规则创建成功</p>
+</div>
+<div class="section" id="prometheus">
+<h2>业务应用集成Prometheus监控<a class="headerlink" href="#prometheus" title="Permalink to this headline">¶</a></h2>
+<p>下面以一个spring boot 2项目为例子, 展示如何使用actuator和micrometer为应用接入prometheus监控体系.</p>
+<ul class="simple">
+<li>修改 <em>pom.xml</em> , 增加包依赖</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="o">&lt;</span><span class="n">dependency</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">groupId</span><span class="o">&gt;</span><span class="n">org</span><span class="o">.</span><span class="n">springframework</span><span class="o">.</span><span class="n">boot</span><span class="o">&lt;/</span><span class="n">groupId</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">artifactId</span><span class="o">&gt;</span><span class="n">spring</span><span class="o">-</span><span class="n">boot</span><span class="o">-</span><span class="n">starter</span><span class="o">-</span><span class="n">actuator</span><span class="o">&lt;/</span><span class="n">artifactId</span><span class="o">&gt;</span>
+        <span class="o">&lt;/</span><span class="n">dependency</span><span class="o">&gt;</span>
+        <span class="o">&lt;</span><span class="n">dependency</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">groupId</span><span class="o">&gt;</span><span class="n">io</span><span class="o">.</span><span class="n">micrometer</span><span class="o">&lt;/</span><span class="n">groupId</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">artifactId</span><span class="o">&gt;</span><span class="n">micrometer</span><span class="o">-</span><span class="n">registry</span><span class="o">-</span><span class="n">prometheus</span><span class="o">&lt;/</span><span class="n">artifactId</span><span class="o">&gt;</span>
+            <span class="o">&lt;</span><span class="n">version</span><span class="o">&gt;</span><span class="mf">1.0</span><span class="o">.</span><span class="mi">4</span><span class="o">&lt;/</span><span class="n">version</span><span class="o">&gt;</span>
+        <span class="o">&lt;/</span><span class="n">dependency</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>修改resource/application-dev.property, 开放prometheus监控子路径</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">management</span><span class="o">.</span><span class="n">endpoints</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">exposure</span><span class="o">.</span><span class="n">include</span><span class="o">=</span><span class="n">health</span><span class="p">,</span><span class="n">info</span><span class="p">,</span><span class="n">metrics</span><span class="p">,</span><span class="n">prometheus</span>
+    <span class="n">management</span><span class="o">.</span><span class="n">endpoint</span><span class="o">.</span><span class="n">prometheus</span><span class="o">.</span><span class="n">enabled</span><span class="o">=</span><span class="n">true</span>
+    <span class="n">management</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">auto</span><span class="o">-</span><span class="n">time</span><span class="o">-</span><span class="n">requests</span><span class="o">=</span><span class="n">true</span>
+    <span class="n">management</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">export</span><span class="o">.</span><span class="n">prometheus</span><span class="o">.</span><span class="n">enabled</span><span class="o">=</span><span class="n">true</span>
+    <span class="n">management</span><span class="o">.</span><span class="n">security</span><span class="o">.</span><span class="n">enabled</span><span class="o">=</span><span class="n">false</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>在Controller.java中, 导入依赖包.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="kn">import</span> <span class="nn">java.util.concurrent.atomic.AtomicInteger</span><span class="p">;</span>
+    
+    <span class="kn">import</span> <span class="nn">io.micrometer.core.annotation.Timed</span><span class="p">;</span>
+    <span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.Meter</span><span class="p">;</span>
+    <span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.Counter</span><span class="p">;</span>
+    <span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.MeterRegistry</span><span class="p">;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>通用方法: 为每个api加上&#64;Timed注解, 用于收集时间类计数, 如总次数, 平均每秒次数, 最大平均每秒次数.
+另外也可设置标签, 直方图统计(histogram)等属性.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="nd">@ApiOperation</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;正常Hi&quot;</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="s2">&quot;参数：name&quot;</span><span class="p">)</span>
+    <span class="nd">@RequestMapping</span><span class="p">(</span><span class="s2">&quot;/hi&quot;</span><span class="p">)</span>
+    <span class="nd">@Timed</span><span class="p">(</span> <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;greeting_hi&quot;</span><span class="p">,</span>
+            <span class="n">histogram</span> <span class="o">=</span> <span class="n">false</span><span class="p">,</span>
+            <span class="n">extraTags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;demo&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">public</span> <span class="n">String</span> <span class="n">hi</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s2">&quot;Hi!&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>如果需要自定义统计信息, 则通过 <em>MetricRegistry</em> 构造计数器(counter)或者度量器(gauge).
+在业务函数方法中增加计数器/度量器调用.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">Counter</span> <span class="n">myCounter</span><span class="p">;</span>
+    <span class="n">AtomicInteger</span> <span class="n">myGauge</span><span class="p">;</span>
+    
+    <span class="n">public</span> <span class="n">GreetingController</span><span class="p">(</span><span class="n">MeterRegistry</span> <span class="n">registry</span><span class="p">){</span>
+        <span class="o">//</span> <span class="n">注册名字为</span> <span class="n">my_counter</span> <span class="n">计数器衡量</span> <span class="o">/</span><span class="n">hi</span> <span class="n">api</span>
+        <span class="n">this</span><span class="o">.</span><span class="n">myCounter</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">counter</span><span class="p">(</span><span class="s2">&quot;my_counter&quot;</span><span class="p">);</span> 
+        <span class="o">//</span> <span class="n">注册名字为</span> <span class="n">my_gauge</span> <span class="n">度量器用于计算</span> <span class="n">myGauge对象的长度</span>
+        <span class="n">this</span><span class="o">.</span><span class="n">myGauge</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">gauge</span><span class="p">(</span><span class="s2">&quot;my_gauge&quot;</span><span class="p">,</span> <span class="n">new</span> <span class="n">AtomicInteger</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+    <span class="p">}</span>
+    
+    <span class="nd">@ApiOperation</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;正常Hi&quot;</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="s2">&quot;参数：name&quot;</span><span class="p">)</span>
+    <span class="nd">@RequestMapping</span><span class="p">(</span><span class="s2">&quot;/hi&quot;</span><span class="p">)</span>
+    <span class="n">public</span> <span class="n">String</span> <span class="n">hi</span><span class="p">()</span> <span class="p">{</span>
+        <span class="o">//</span> <span class="n">增加计数对象值</span> <span class="n">myCounter</span>
+        <span class="n">this</span><span class="o">.</span><span class="n">myCounter</span><span class="o">.</span><span class="n">increment</span><span class="p">();</span>
+        <span class="k">return</span> <span class="s2">&quot;Hi!&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="nd">@ApiOperation</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;随机返回码Hi&quot;</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="nd">@GetMapping</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;/randomStatusHi&quot;</span><span class="p">)</span>
+    <span class="n">public</span> <span class="n">ResponseEntity</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">randomStatusHi</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nb">int</span> <span class="n">code</span> <span class="o">=</span> <span class="n">new</span> <span class="n">Random</span><span class="p">()</span><span class="o">.</span><span class="n">nextInt</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+        <span class="n">Integer</span> <span class="n">result</span> <span class="o">=</span> <span class="n">randomStatus</span> <span class="o">+</span> <span class="n">code</span><span class="p">;</span>
+        <span class="o">//</span> <span class="n">增加返回配置的状态码的概率</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">code</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">randomStatus</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="o">//</span> <span class="n">设置度量对象myGauge</span>
+        <span class="n">this</span><span class="o">.</span><span class="n">myGauge</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">code</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">ResponseEntity</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="s2">&quot;Random Status &quot;</span> <span class="o">+</span> <span class="n">String</span><span class="o">.</span><span class="n">valueOf</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; Hi!&quot;</span><span class="p">);</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Maven构建, 执行jar包, 使spring boot RestController跑起来</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># mvn clean package</span>
+    <span class="c1"># java -jar target/gs-rest-service-0.1.0.jar --spring.profiles.active=dev</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>访问api /greeting/hi, /greeting/randomStatusHi, 模拟外部请求</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># curl http://localhost:8800/greeting/hi</span>
+    <span class="c1"># curl http://localhost:8800/greeting/randomStatusHi</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>检查prometheus metrics有关以上两个api的统计信息: <em>http://localhost:8800/actuator/prometheus</em></li>
+</ul>
+<p><img alt="../_images/prometheus_greeting_hi.png" src="../_images/prometheus_greeting_hi.png" />greeting hi metrics
+<img alt="../_images/prometheus_randomstatus_hi.png" src="../_images/prometheus_randomstatus_hi.png" />random status hi gauge</p>
 </div>
 </div>
 

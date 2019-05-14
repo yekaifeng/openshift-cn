@@ -23,4 +23,22 @@
     # 修改阿里云网络规则开放tcp 5901端口
 ~~~
 
+### Spring Metrics不能构建成功
+按照[官档](https://docs.spring.io/spring-metrics/docs/current/public/prometheus)的方式
+集成prometheus, _mvn build_ 构建总不能成功. 错误信息如下.
+
+~~~
+    2018-07-26 16:06:12.312 ERROR 7582 --- [           main] o.s.boot.SpringApplication               : Application run failed
+    org.springframework.beans.factory.BeanDefinitionStoreException: Failed to process import candidates for configuration class [com.example.demo.DemoApplication]; nested exception is java.lang.IllegalStateException: Failed to introspect annotated methods on class io.prometheus.client.spring.boot.PrometheusEndpointConfiguration
+~~~
+
+原来这是一个bug, 这功能根本不能用. 相关[issue](https://github.com/prometheus/client_java/issues/405)
+
+~~~
+    [SpringBoot2] Cannot get SpringBoot 2 to work with Prometheus #405
+    https://github.com/prometheus/client_java/issues/405
+~~~
+
+
+
 

@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: prometheus-openshift-rules
+  namespace: openshift-monitoring
+spec:
+  groups:
+  - name: 'Openshift 云平台告警'
+    rules:
+    - alert: 'openshift-01-容器重启'
+      expr: changes(container_start_time_seconds{id!~"/(system|user).slice.*|/kubepods.slice/kubepods-burstable.slice/.*.slice", pod_name!~"^.*-deploy$"}[5m]) > 1
+      labels:
+        level: '警示'
+        callbackUrl: 'https://prometheus-k8s-openshift-monitoring.apps.openshift.net.cn/graph?g0.range_input=1h&g0.expr=container_start_time_seconds&g0.tab=1'
+      annotations:
+        description: '{{ $labels.instance }}实例在过去5分钟内出现容器重启的现象'
+
+    - alert: 'openshift-10-Haproxy实例下线'
+      expr: haproxy_up < 1
+      for: 5m
+      labels:
+        level: '警示'
+        callbackUrl: 'https://prometheus-k8s-openshift-monitoring.apps.openshift.net.cn/graph?g0.range_input=1h&g0.expr=haproxy_up&g0.tab=1'
+      annotations:
+        description: '{{ $labels.instance }} Haproxy实例下线'
