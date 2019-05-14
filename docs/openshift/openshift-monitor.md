@@ -385,7 +385,9 @@ Router的监控端口是1936, 以Basic Auth验证请求. 所以在ServiceMonitor
 ![greeting hi metrics](../_static/prometheus_greeting_hi.png)
 ![random status hi gauge](../_static/prometheus_randomstatus_hi.png)
 
-
+- 参考资料
+    1. [java-spring-metrics](https://cloud.ibm.com/docs/java?topic=java-spring-metrics)
+    2. [micrometer prometheus](https://micrometer.io/docs/registry/prometheus)
 
 
 
