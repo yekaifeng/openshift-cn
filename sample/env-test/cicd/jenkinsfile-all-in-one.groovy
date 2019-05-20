@@ -21,7 +21,7 @@ def defaultBranch = BRANCH
 
 def openshiftPortalUrl = "https://portal.openshift.net.cn:8443"
 def registryUsername = "jenkins"
-def registryPassword = "changeme"
+def registryPassword = "xxxx"
 
 //环境信息
 def registryAddr = ["dev"         : "docker-registry.default.svc:5000"]
