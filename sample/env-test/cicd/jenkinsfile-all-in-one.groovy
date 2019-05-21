@@ -20,8 +20,8 @@ def applicationType = APPLICATION_TYPE //dc, deploy, statefulset
 def defaultBranch = BRANCH
 
 def openshiftPortalUrl = "https://portal.openshift.net.cn:8443"
-def registryUsername = "jenkins"
-def registryPassword = "xxxx"
+def registryUsername = REGISTRY_USER
+def registryPassword = REGISTRY_PASSWORD
 
 //环境信息
 def registryAddr = ["dev"         : "docker-registry.default.svc:5000"]
@@ -43,7 +43,7 @@ try {
     node(buildNodeLabel) {
         //参数检查-start
         stage('verify-and-init') {
-            echo "Flow: ${ENV}, Version: ${VERSION}, Tag: ${TAG}, SkipBuild: ${SKIP_BUILD}, SkipTest: ${SKIP_TEST}, ProjectDefaultBranch: ${defaultBranch}, SubDomain: ${envSubDomain.get(ENV)}"
+            echo "Flow: ${ENV}, Version: ${VERSION}, SkipBuild: ${SKIP_BUILD}, SkipTest: ${SKIP_TEST}, ProjectDefaultBranch: ${defaultBranch}, SubDomain: ${envSubDomain.get(ENV)}"
 
             //是否符合版本号规范
             if (!isValidVersion()) {
@@ -55,7 +55,7 @@ try {
                 stage("git-pull") {
                     gitPull(gitRepo)
                     //获取镜像tag
-                    imageTag = getImageTag()
+                    imageTag = getImageTag(tagVersionPrefix)
                 }
             }
         }
@@ -95,7 +95,24 @@ try {
             sh "docker push ${imagePrefix}/${module}:${imageTag}"
             echo "推送镜像${imagePrefix}/${module}:${imageTag}成功"
 		}
-    }
+    
+	    // 部署应用到Openshift环境
+	    stage("deploy-openshift") {
+            //检查镜像是否存在
+            //checkSingleImageExisting("${registryUrl}", "${registryProject}", "${imagePrefix}/${module}", "${imageTag}")
+
+            //登陆openshift， 此用户必须有发布template, 部署更新应用权限
+            sh "oc login ${envAddr.get(ENV)} -u ${envUser.get(ENV)} -p ${envPass.get(ENV)} --insecure-skip-tls-verify"
+		
+		    // 更新template, 发布或者更新应用
+		    echo "发布模块 ${module}"
+            initOpenshiftModule("${envSubDomain.get(ENV)}", "${imagePrefix}/${module}", "${module}",
+                    "openshift.yml", deployProject, applicationType, "${imageTag}");
+
+		}
+
+	
+	}
 
 } catch (err) {
 currentBuild.result = 'FAILURE'
@@ -136,7 +153,7 @@ def gitPull(String gitRepo) {
     }
 }
 
-def getImageTag() {
+def getImageTag(tagVersionPrefix) {
     //测试环境使用时间戳作为镜像tag, 用于提测的版本控制
     if (ENV == "test" && !Boolean.valueOf(SKIP_BUILD)) {
         return getTagFromPom()
@@ -144,12 +161,13 @@ def getImageTag() {
     if (VERSION.contains("SNAPSHOT")) {
         return "latest"
     } else {
-        return VERSION
+        String tagVersion = tagVersionPrefix;
+		return tagVersion
     }
 }
 
 def getTagFromPom() {
-    return "V${readMavenPom().getVersion().replaceAll('-SNAPSHOT', '')}-${BUILD_ID}"
+    return "v${readMavenPom().getVersion().replaceAll('-SNAPSHOT', '')}-${BUILD_ID}"
 }
 
 def getArtifactIdFromPom() {
@@ -221,5 +239,88 @@ def isPatchBranch() {
     return (BRANCH =~ /^patch-.+/).matches()
 }
 
+def initOpenshiftModule(String subDomain, String imageName, String moduleName, String moduleTemplate,
+                        String projectToDeploy, String applicationType, String imageTag) {
+    echo "正在初始化模块 ${moduleName}"
+    sh "oc project ${projectToDeploy}"
+    //开发环境的project后缀为'-dev'
+    //String projectToDeploy = ENV == 'dev' ? project + "-dev" : project
+    try {
+        sh "oc delete -f ${moduleTemplate} -n ${projectToDeploy}"
+    } catch (err) {
+        echo "Template ${moduleTemplate}不存在，但不影响构建"
+    }
+    sh "oc create -f ${moduleTemplate} -n ${projectToDeploy}"
+
+    def replicas =  1
+
+    //检查dc是否存在, 如果不存在就创建
+    boolean existing = false
+    try {
+        sh "oc get ${applicationType} ${moduleName} -n ${projectToDeploy}"
+        existing = true
+    } catch (err) {
+        echo "deploymentconfig ${moduleName} 不存在, 需要进行初始化"
+    }
+    if (Boolean.valueOf(APPLICATION_INIT) || !existing) {
+        try {
+            sh "oc process -f ${moduleTemplate} -p ENV=${ENV} | oc delete -f - -n ${projectToDeploy}"
+        } catch (err) {
+            echo "Template ${moduleTemplate}对应的老对象不存在，但不影响构建"
+        }
+        sh "sleep 10s"
+        sh "oc process -f ${moduleTemplate} -p ENV=${ENV} -p IMAGE=${imageName} -p VERSION=${imageTag} -p REPLICAS=${replicas} " +
+                "-p BUILD_TIME=${currentBuild.startTimeInMillis} " +
+                "-p CPU_REQUEST=100m " +
+                "-p CPU_LIMIT=1000m " +
+                "-p MEM_REQUEST=512Mi " +
+                "-p MEM_LIMIT=2048Mi " +
+                "-p SUB_DOMAIN=${subDomain} | oc create -f - -n ${projectToDeploy}"
+    } else {
+        try {
+            sh "oc process -f ${moduleTemplate} -p ENV=${ENV} -p IMAGE=${imageName} -p VERSION=${imageTag} -p REPLICAS=${replicas} " +
+                    "-p BUILD_TIME=${currentBuild.startTimeInMillis} " +
+                    "-p CPU_REQUEST=100m " +
+                    "-p CPU_LIMIT=1000m " +
+                    "-p MEM_REQUEST=512Mi " +
+                    "-p MEM_LIMIT=2048Mi " +
+                    "-p SUB_DOMAIN=${subDomain} | oc create -f - -n ${projectToDeploy}"
+        } catch (err) {
+            echo "某些resource不支持replace, 比如Service的clusterIP不可变. 不影响"
+        }
+
+    }
+}
+
+//检查镜像是否存在
+def checkSingleImageExisting(def registryUrl, def registryProject, def imageName, def tag) {
+    def response = httpRequest(
+            consoleLogResponseBody: true,
+            httpMode: 'GET',
+            url: "http://${registryUrl}/api/repositories/${registryProject}/${imageName}/tags/${tag}", // check test registry only!
+            validResponseCodes: '200:404',
+            contentType: 'APPLICATION_JSON',
+            acceptType: 'APPLICATION_JSON'
+    )
+    if (response.getStatus() == 404) {
+        return false
+    } else {
+        return true
+    }
+}
+
+def checkImageExisting(def registryUrl, def registryProject, def moduleMap) {
+    if(MODULE == 'all') {
+        moduleMap.each { module, imageName ->
+            if(!checkSingleImageExisting(registryUrl, registryProject, imageName, TAG)) {
+                error "${imageName}的${tag}镜像不存在"
+                return false
+            }
+        }
+        return true
+    } else {
+        return checkSingleImageExisting(registryUrl, registryProject, moduleMap.get(MODULE), TAG)
+    }
+}
 
 

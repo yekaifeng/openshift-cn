@@ -108,3 +108,63 @@
     kennethye/jenkins-agent-maven-35-centos7:v3.11.1
 ~~~
 
+### 搭建业务应用流水线
+
+支撑业务（java）应用从源码, UT, 打包与上传docker镜像, 创建/更新template, 部署到openshift平台.
+以下例子镜像存储使用自带的 Openshift Registry, 支持改造成Harbor等其它三方镜像仓库.
+
+- 创建 _jenkins_ 用户, 用于Docker镜像的上传与下载. 登陆一次,使用户信息能同步到etcd.
+
+~~~
+    # htpasswd -b /etc/origin/master/htpasswd jenkins <password>
+    # oc login -u jenkins -p <password> https://portal.openshift.net.cn:8443
+    # oc logout
+~~~
+
+- 授予用户访问镜像仓库的权限. 每个项目都分别绑定 _registry-editor_ 权限, 才能使用 _jenkins_ 用户上传/下载项目下的镜像.
+
+~~~
+    # oc policy add-role-to-user registry-editor jenkins -n hyperion
+~~~
+
+- 创建jenkins job包含以下几个Parameter
+
+~~~
+    BUILD_NODE_LABEL	
+    PROJECT_NAME	
+    GIT_REPO	
+    APPLICATION_TYPE	
+    BRANCH	
+    OC_DEV_USER	
+    OC_DEV_PASS	
+    REGISTRY_USER		
+    REGISTRY_PASSWORD	
+    ENV	
+    VERSION	
+    SKIP_BUILD	
+    SKIP_TEST	
+    APPLICATION_INIT
+~~~
+![Pipeline Parameters](../_static/pipeline-test003-01.png)
+
+- 在jenkins job中导入groovy 脚本 _cicd/jenkinsfile-all-in-one.groovy_
+
+- 以 [ft-rest-service](https://github.com/yekaifeng/ft-rest-service)为例子, 普通Spring Boot
+应用需要Dockerfile容器化, 并建立适配openshift模板, 才能上云. 以下为相应改动:
+
+~~~
+    Dockerfile:
+    1. 抽取JAVA_OPTIONS, APP_OPTS, JMX_OPTS, GCLOG_OPTS, 支持应用按需要配置
+    2. Expose 开放端口
+    3. 支持通过环境变量SPRING_PROFILES_ACTIVE传参, 设置执行环境(dev/test/prod)
+    
+    Openshift.yml模板:
+    1. 支持设置CPU, 内存 request/limit
+    2. 根据当前应用设置合理默认值, 如APPLICATION_NAME, IMAGE, SUB_DOMAIN
+    3. Service设置prometheus监控annotation
+~~~
+
+- Jenkins中执行 _Build with Parameters_ 即可完成项目从源码构建, UT, 打包容器镜像, 上传镜像, 
+构建openshit模板, 部署应用到云平台的完整过程.
+
+![Build Ship Run !](../_static/build-ship-run.png)

@@ -91,6 +91,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#jenkinspipeline-docker-agent">改造jenkins能够使用pipeline docker agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#jenkins-agent-mavendocker-in-docker-dind">改造jenkins-agent-maven能够运行docker in docker (dind)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#jenkins-slavejekinks">添加jenkins slave进入jekinks集群步骤</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">搭建业务应用流水线</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
@@ -268,6 +269,66 @@
     <span class="n">kennethye</span><span class="o">/</span><span class="n">jenkins</span><span class="o">-</span><span class="n">agent</span><span class="o">-</span><span class="n">maven</span><span class="o">-</span><span class="mi">35</span><span class="o">-</span><span class="n">centos7</span><span class="p">:</span><span class="n">v3</span><span class="o">.</span><span class="mf">11.1</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="id1">
+<h2>搭建业务应用流水线<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>支撑业务（java）应用从源码, UT, 打包与上传docker镜像, 创建/更新template, 部署到openshift平台.
+以下例子镜像存储使用自带的 Openshift Registry, 支持改造成Harbor等其它三方镜像仓库.</p>
+<ul class="simple">
+<li>创建 <em>jenkins</em> 用户, 用于Docker镜像的上传与下载. 登陆一次,使用户信息能同步到etcd.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># htpasswd -b /etc/origin/master/htpasswd jenkins &lt;password&gt;</span>
+    <span class="c1"># oc login -u jenkins -p &lt;password&gt; https://portal.openshift.net.cn:8443</span>
+    <span class="c1"># oc logout</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>授予用户访问镜像仓库的权限. 每个项目都分别绑定 <em>registry-editor</em> 权限, 才能使用 <em>jenkins</em> 用户上传/下载项目下的镜像.</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc policy add-role-to-user registry-editor jenkins -n hyperion</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建jenkins job包含以下几个Parameter</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">BUILD_NODE_LABEL</span>	
+    <span class="n">PROJECT_NAME</span>	
+    <span class="n">GIT_REPO</span>	
+    <span class="n">APPLICATION_TYPE</span>	
+    <span class="n">BRANCH</span>	
+    <span class="n">OC_DEV_USER</span>	
+    <span class="n">OC_DEV_PASS</span>	
+    <span class="n">REGISTRY_USER</span>		
+    <span class="n">REGISTRY_PASSWORD</span>	
+    <span class="n">ENV</span>	
+    <span class="n">VERSION</span>	
+    <span class="n">SKIP_BUILD</span>	
+    <span class="n">SKIP_TEST</span>	
+    <span class="n">APPLICATION_INIT</span>
+</pre></div>
+</div>
+<p><img alt="../_images/pipeline-test003-01.png" src="../_images/pipeline-test003-01.png" />Pipeline Parameters</p>
+<ul class="simple">
+<li>在jenkins job中导入groovy 脚本 <em>cicd/jenkinsfile-all-in-one.groovy</em></li>
+<li>以 <a class="reference external" href="https://github.com/yekaifeng/ft-rest-service">ft-rest-service</a>为例子, 普通Spring Boot
+应用需要Dockerfile容器化, 并建立适配openshift模板, 才能上云. 以下为相应改动:</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">Dockerfile</span><span class="p">:</span>
+    <span class="mf">1.</span> <span class="n">抽取JAVA_OPTIONS</span><span class="p">,</span> <span class="n">APP_OPTS</span><span class="p">,</span> <span class="n">JMX_OPTS</span><span class="p">,</span> <span class="n">GCLOG_OPTS</span><span class="p">,</span> <span class="n">支持应用按需要配置</span>
+    <span class="mf">2.</span> <span class="n">Expose</span> <span class="n">开放端口</span>
+    <span class="mf">3.</span> <span class="n">支持通过环境变量SPRING_PROFILES_ACTIVE传参</span><span class="p">,</span> <span class="n">设置执行环境</span><span class="p">(</span><span class="n">dev</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">prod</span><span class="p">)</span>
+    
+    <span class="n">Openshift</span><span class="o">.</span><span class="n">yml模板</span><span class="p">:</span>
+    <span class="mf">1.</span> <span class="n">支持设置CPU</span><span class="p">,</span> <span class="n">内存</span> <span class="n">request</span><span class="o">/</span><span class="n">limit</span>
+    <span class="mf">2.</span> <span class="n">根据当前应用设置合理默认值</span><span class="p">,</span> <span class="n">如APPLICATION_NAME</span><span class="p">,</span> <span class="n">IMAGE</span><span class="p">,</span> <span class="n">SUB_DOMAIN</span>
+    <span class="mf">3.</span> <span class="n">Service设置prometheus监控annotation</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Jenkins中执行 <em>Build with Parameters</em> 即可完成项目从源码构建, UT, 打包容器镜像, 上传镜像,
+构建openshit模板, 部署应用到云平台的完整过程.</li>
+</ul>
+<p><img alt="../_images/build-ship-run.png" src="../_images/build-ship-run.png" />Build Ship Run !</p>
 </div>
 </div>
 
