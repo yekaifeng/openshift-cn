@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>问题汇总及解决方法 &mdash; openshift-cn 0.0.2 documentation</title>
+  <title>问题汇总及解决方法 &mdash; openshift-cn 1.0.0 documentation</title>
   
 
   
@@ -90,6 +90,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#selinux-enforcing">阿里云镜像不支持selinux enforcing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#https-err-connection-reset">https服务不能用浏览器访问, 错误 <em>ERR_CONNECTION_RESET</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spring-metrics">Spring Metrics不能构建成功</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#podpending-cni-server-connection-refuse">POD创建一直处于pending状态, cni-server报 connection refuse错误</a></li>
 </ul>
 </li>
 </ul>
@@ -192,6 +193,43 @@
 <p>原来这是一个bug, 这功能根本不能用. 相关<a class="reference external" href="https://github.com/prometheus/client_java/issues/405">issue</a></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="p">[</span><span class="n">SpringBoot2</span><span class="p">]</span> <span class="n">Cannot</span> <span class="n">get</span> <span class="n">SpringBoot</span> <span class="mi">2</span> <span class="n">to</span> <span class="n">work</span> <span class="k">with</span> <span class="n">Prometheus</span> <span class="c1">#405</span>
     <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">prometheus</span><span class="o">/</span><span class="n">client_java</span><span class="o">/</span><span class="n">issues</span><span class="o">/</span><span class="mi">405</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="podpending-cni-server-connection-refuse">
+<h2>POD创建一直处于pending状态, cni-server报 connection refuse错误<a class="headerlink" href="#podpending-cni-server-connection-refuse" title="Permalink to this headline">¶</a></h2>
+<p>POD一直创建不成功, 有以下错误信息</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="ne">Warning</span>  <span class="n">FailedCreatePodSandBox</span>  <span class="mi">20</span><span class="n">m</span>     <span class="n">kubelet</span><span class="p">,</span> <span class="n">node01</span><span class="o">-</span><span class="n">inner</span>  <span class="n">Failed</span> <span class="n">create</span> <span class="n">pod</span> <span class="n">sandbox</span><span class="p">:</span> <span class="n">rpc</span> <span class="n">error</span><span class="p">:</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">Unknown</span> <span class="n">desc</span> <span class="o">=</span> <span class="p">[</span><span class="n">failed</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">up</span> <span class="n">sandbox</span> <span class="n">container</span> <span class="s2">&quot;d422c351dbd77432a6204db362f82c0a4009eeb230987e1ad2b3fbca2f27c476&quot;</span>
+    <span class="n">network</span> <span class="k">for</span> <span class="n">pod</span> <span class="s2">&quot;logging-es-data-master-15qapabn-2-mhdq8&quot;</span><span class="p">:</span> <span class="n">NetworkPlugin</span> <span class="n">cni</span> <span class="n">failed</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">up</span> <span class="n">pod</span>
+    <span class="s2">&quot;logging-es-data-master-15qapabn-2-mhdq8_openshift-logging&quot;</span> <span class="n">network</span><span class="p">:</span> <span class="n">failed</span> <span class="n">to</span> <span class="n">send</span> <span class="n">CNI</span> <span class="n">request</span><span class="p">:</span> <span class="n">Post</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">dummy</span><span class="o">/</span><span class="p">:</span>
+    <span class="n">dial</span> <span class="n">unix</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">openshift</span><span class="o">-</span><span class="n">sdn</span><span class="o">/</span><span class="n">cni</span><span class="o">-</span><span class="n">server</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span> <span class="n">connect</span><span class="p">:</span> <span class="n">connection</span> <span class="n">refused</span><span class="p">,</span> <span class="n">failed</span> <span class="n">to</span> <span class="n">clean</span> <span class="n">up</span> <span class="n">sandbox</span> <span class="n">container</span>
+    <span class="s2">&quot;d422c351dbd77432a6204db362f82c0a4009eeb230987e1ad2b3fbca2f27c476&quot;</span> <span class="n">network</span> <span class="k">for</span> <span class="n">pod</span> <span class="s2">&quot;logging-es-data-master-15qapabn-2-mhdq8&quot;</span><span class="p">:</span>
+    <span class="n">NetworkPlugin</span> <span class="n">cni</span> <span class="n">failed</span> <span class="n">to</span> <span class="n">teardown</span> <span class="n">pod</span> <span class="s2">&quot;logging-es-data-master-15qapabn-2-mhdq8_openshift-logging&quot;</span> <span class="n">network</span><span class="p">:</span>
+    <span class="n">failed</span> <span class="n">to</span> <span class="n">send</span> <span class="n">CNI</span> <span class="n">request</span><span class="p">:</span> <span class="n">Post</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">dummy</span><span class="o">/</span><span class="p">:</span> <span class="n">dial</span> <span class="n">unix</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">openshift</span><span class="o">-</span><span class="n">sdn</span><span class="o">/</span><span class="n">cni</span><span class="o">-</span><span class="n">server</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span> <span class="n">connect</span><span class="p">:</span> <span class="n">connection</span> <span class="n">refused</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>尝试手工连接 <em>cni-server</em> socket, 同样返回 <em>connection refuse</em></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># CNI_COMMAND=ADD curl --unix-socket /var/run/openshift-sdn/cni-server.sock -X POST http://dummy/</span>
+    <span class="n">curl</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="n">Failed</span> <span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">openshift</span><span class="o">-</span><span class="n">sdn</span><span class="o">/</span><span class="n">cni</span><span class="o">-</span><span class="n">server</span><span class="o">.</span><span class="n">sock</span><span class="p">:</span> <span class="n">Connection</span> <span class="n">refused</span>
+</pre></div>
+</div>
+<p>cni-server 容器日志显示, 对ovs健康检查不过</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">SDN</span> <span class="n">healthcheck</span> <span class="n">detected</span> <span class="n">unhealthy</span> <span class="n">OVS</span> <span class="n">server</span><span class="p">,</span> <span class="n">restarting</span>
+</pre></div>
+</div>
+<p>检查代码 <em>openshift-origin/pkg/network/node/healthcheck.go</em>. 发现如果健康检查不过,
+就卡死在这里不动了,外包的一层是utilwait.NeverStop的loop, 所以也不退出. 从TODO信息看也证明
+没有开发进程内重启机制. 只能是手工重启.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="n">nil</span> <span class="p">{</span>
+        <span class="o">//</span> <span class="n">If</span> <span class="n">OVS</span> <span class="n">restarts</span> <span class="ow">and</span> <span class="n">our</span> <span class="n">health</span> <span class="n">check</span> <span class="n">fails</span><span class="p">,</span> <span class="n">we</span> <span class="n">exit</span>
+        <span class="o">//</span> <span class="n">TODO</span><span class="p">:</span> <span class="n">make</span> <span class="n">openshift</span><span class="o">-</span><span class="n">sdn</span> <span class="n">able</span> <span class="n">to</span> <span class="n">reconcile</span> <span class="n">without</span> <span class="n">a</span> <span class="n">restart</span>
+        <span class="n">glog</span><span class="o">.</span><span class="n">Fatalf</span><span class="p">(</span><span class="s2">&quot;SDN healthcheck detected unhealthy OVS server, restarting: %v&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>最后,解决办法是重启SDN POD, 恢复正常</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc delete pod sdn-5qtv4 -n openshift-sdn</span>
 </pre></div>
 </div>
 </div>

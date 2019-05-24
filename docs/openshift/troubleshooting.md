@@ -39,6 +39,54 @@
     https://github.com/prometheus/client_java/issues/405
 ~~~
 
+### POD创建一直处于pending状态, cni-server报 connection refuse错误
+POD一直创建不成功, 有以下错误信息
+
+~~~
+    Warning  FailedCreatePodSandBox  20m     kubelet, node01-inner  Failed create pod sandbox: rpc error:
+    code = Unknown desc = [failed to set up sandbox container "d422c351dbd77432a6204db362f82c0a4009eeb230987e1ad2b3fbca2f27c476"
+    network for pod "logging-es-data-master-15qapabn-2-mhdq8": NetworkPlugin cni failed to set up pod
+    "logging-es-data-master-15qapabn-2-mhdq8_openshift-logging" network: failed to send CNI request: Post http://dummy/:
+    dial unix /var/run/openshift-sdn/cni-server.sock: connect: connection refused, failed to clean up sandbox container
+    "d422c351dbd77432a6204db362f82c0a4009eeb230987e1ad2b3fbca2f27c476" network for pod "logging-es-data-master-15qapabn-2-mhdq8":
+    NetworkPlugin cni failed to teardown pod "logging-es-data-master-15qapabn-2-mhdq8_openshift-logging" network:
+    failed to send CNI request: Post http://dummy/: dial unix /var/run/openshift-sdn/cni-server.sock: connect: connection refused]
+~~~
+
+尝试手工连接 _cni-server_ socket, 同样返回 _connection refuse_
+
+~~~
+    # CNI_COMMAND=ADD curl --unix-socket /var/run/openshift-sdn/cni-server.sock -X POST http://dummy/
+    curl: (7) Failed to connect to /var/run/openshift-sdn/cni-server.sock: Connection refused
+~~~
+
+cni-server 容器日志显示, 对ovs健康检查不过
+
+~~~
+    SDN healthcheck detected unhealthy OVS server, restarting
+~~~
+
+检查代码 _openshift-origin/pkg/network/node/healthcheck.go_. 发现如果健康检查不过,
+就卡死在这里不动了,外包的一层是utilwait.NeverStop的loop, 所以也不退出. 从TODO信息看也证明
+没有开发进程内重启机制. 只能是手工重启.
+
+~~~
+    if err != nil {
+        // If OVS restarts and our health check fails, we exit
+        // TODO: make openshift-sdn able to reconcile without a restart
+        glog.Fatalf("SDN healthcheck detected unhealthy OVS server, restarting: %v", err)
+    }
+~~~
+
+最后,解决办法是重启SDN POD, 恢复正常
+
+~~~
+    # oc delete pod sdn-5qtv4 -n openshift-sdn
+~~~
+
+
+
+
 
 
 
