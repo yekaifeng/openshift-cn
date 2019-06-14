@@ -168,3 +168,56 @@
 构建openshit模板, 部署应用到云平台的完整过程.
 
 ![Build Ship Run !](../_static/build-ship-run.png)
+
+### 让业务应用流水线展示在Openshit页面上
+上述流水线构建只能在jenkin 页面上能看到, 如果通过设置BuildConfig jenkinsPipelineStrategy构建类型,
+即可在openshift页面上触发, 展示整个构建的过程, 使CICD的管理更统一.
+
+- 准备BuildConfig文件, 里面包含通过环境变量传给jenkin pipeline的所有默认配置
+
+~~~
+    kind: "BuildConfig"
+    apiVersion: "v1"
+    metadata:
+      name: "pipeline-ft-rest-service"
+    spec:
+      source:
+        git:
+          uri: "https://github.com/yekaifeng/openshift-cn.git"  (pipeline文件所在的git repo)
+      strategy:
+        jenkinsPipelineStrategy:    （Pipeline Build构建类型）
+          env:
+            # Node label of jenkins slave
+            - name: "BUILD_NODE_LABEL"    （传给pipeline的各种环境变量）
+              value: "maven"
+            # Openshift project of current app belongs to
+            - name: "PROJECT_NAME"
+              value: "hyperion"
+          ......
+          jenkinsfilePath: sample/env-test/cicd/jenkinsfile-all-in-one.groovy （pipeline所在目录）
+~~~
+
+- 创建Build Config: pipeline-ft-rest-service
+
+~~~
+    # oc create -f sample/env-test/cicd/bc-pipeline-ft-rest-service.yml -n hyperion
+~~~
+
+- 在页面中Builds --> Pipelines 中, 点击Start Pipeline
+
+![Start Pipeline](../_static/pipeline-start.png)
+
+- 构建过程被展示在当前openshift页面. 同时Jenkins页面也能够看到相同的结果.
+
+![Build Process](../_static/pipeline-in-bc.png)
+
+
+
+
+
+
+
+
+
+
+

@@ -92,6 +92,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#jenkins-agent-mavendocker-in-docker-dind">改造jenkins-agent-maven能够运行docker in docker (dind)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#jenkins-slavejekinks">添加jenkins slave进入jekinks集群步骤</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">搭建业务应用流水线</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#openshit">让业务应用流水线展示在Openshit页面上</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
@@ -329,6 +330,49 @@
 构建openshit模板, 部署应用到云平台的完整过程.</li>
 </ul>
 <p><img alt="../_images/build-ship-run.png" src="../_images/build-ship-run.png" />Build Ship Run !</p>
+</div>
+<div class="section" id="openshit">
+<h2>让业务应用流水线展示在Openshit页面上<a class="headerlink" href="#openshit" title="Permalink to this headline">¶</a></h2>
+<p>上述流水线构建只能在jenkin 页面上能看到, 如果通过设置BuildConfig jenkinsPipelineStrategy构建类型,
+即可在openshift页面上触发, 展示整个构建的过程, 使CICD的管理更统一.</p>
+<ul class="simple">
+<li>准备BuildConfig文件, 里面包含通过环境变量传给jenkin pipeline的所有默认配置</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    kind: &quot;BuildConfig&quot;
+    apiVersion: &quot;v1&quot;
+    metadata:
+      name: &quot;pipeline-ft-rest-service&quot;
+    spec:
+      source:
+        git:
+          uri: &quot;https://github.com/yekaifeng/openshift-cn.git&quot;  (pipeline文件所在的git repo)
+      strategy:
+        jenkinsPipelineStrategy:    （Pipeline Build构建类型）
+          env:
+            # Node label of jenkins slave
+            - name: &quot;BUILD_NODE_LABEL&quot;    （传给pipeline的各种环境变量）
+              value: &quot;maven&quot;
+            # Openshift project of current app belongs to
+            - name: &quot;PROJECT_NAME&quot;
+              value: &quot;hyperion&quot;
+          ......
+          jenkinsfilePath: sample/env-test/cicd/jenkinsfile-all-in-one.groovy （pipeline所在目录）
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建Build Config: pipeline-ft-rest-service</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f sample/env-test/cicd/bc-pipeline-ft-rest-service.yml -n hyperion</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>在页面中Builds –&gt; Pipelines 中, 点击Start Pipeline</li>
+</ul>
+<p><img alt="../_images/pipeline-start.png" src="../_images/pipeline-start.png" />Start Pipeline</p>
+<ul class="simple">
+<li>构建过程被展示在当前openshift页面. 同时Jenkins页面也能够看到相同的结果.</li>
+</ul>
+<p><img alt="../_images/pipeline-in-bc.png" src="../_images/pipeline-in-bc.png" />Build Process</p>
 </div>
 </div>
 

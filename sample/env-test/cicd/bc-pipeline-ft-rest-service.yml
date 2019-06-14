@@ -1,0 +1,56 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: "pipeline-ft-rest-service"
+spec:
+  source:
+    git:
+      uri: "https://github.com/yekaifeng/openshift-cn.git"
+  strategy:
+    jenkinsPipelineStrategy:
+      env:
+        # Node label of jenkins slave
+        - name: "BUILD_NODE_LABEL"
+          value: "maven"
+        # Openshift project of current app belongs to
+        - name: "PROJECT_NAME"
+          value: "hyperion"
+        # Application name
+        - name: "APPLICATION_TYPE"
+          value: "ft-rest-service"
+        # Source code repos
+        - name: "GIT_REPO"
+          value: "https://github.com/yekaifeng/ft-rest-service.git"
+        # Source branch to checkout
+        - name: "BRANCH"
+          value: "master"
+        # Openshift user that has cluster-admin or project admin privileged to deploy app
+        - name: "OC_DEV_USER"
+          value: "admin"
+        # Admin password
+        - name: "OC_DEV_PASS"
+          value: "xxxxxx"
+        # Images registry user that has privileged to push and pull image
+        - name: "REGISTRY_USER"
+          value: "jenkins"
+        # Registry user password
+        - name: "REGISTRY_PASSWORD"
+          value: "xxxxxx"
+        # dev, test, staging or prod environment
+        - name: "ENV"
+          value: "dev"
+        # Image tag version
+        - name: "VERSION"
+          value: "1.0.0"
+        # Whether skip build stage
+        - name: "SKIP_BUILD"
+          value: "false"
+        # Whether skip test stage
+        - name: "SKIP_TEST"
+          value: "false"
+        # Whether re-creat the app template
+        - name: "APPLICATION_INIT"
+          value: "true"
+      jenkinsfilePath: sample/env-test/cicd/jenkinsfile-all-in-one.groovy
+
+
