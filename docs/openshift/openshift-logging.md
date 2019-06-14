@@ -58,11 +58,11 @@ Openshift 日志模块集成了elastisearch, fluentd, kibana (efk)三个组件, 
     openshift_logging_kibana_replicas=1
     
     
-    # 指定fluentd 缺省用xpmotors定制打包的镜像，指定es, kibana镜像
+    # 指定fluentd 缺省用定制打包的镜像，指定es, kibana镜像
     openshift_logging_elasticsearch_image=openshift/origin-logging-elasticsearch:v3.11.0
-    openshift_logging_kibana_image=xpmotors/origin-logging-kibana:v3.11.2
+    openshift_logging_kibana_image=kennethye/origin-logging-kibana:v3.11.2
     openshift_logging_kibana_proxy_image=openshift/oauth-proxy:v1.0.0
-    openshift_logging_fluentd_image=xpmotors/origin-logging-fluentd:v3.9.2
+    openshift_logging_fluentd_image=kennethye/origin-logging-fluentd:v3.9.2
 ~~~
 
 - 所有es主机创建日志存储目录, 用hostpath存储日志
