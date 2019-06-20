@@ -15,6 +15,7 @@ Welcome to openshift-cn's documentation!
    openshift/openshift-logging
    openshift/openshift-monitor
    openshift/cicd
+   openshift/storage
    openshift/troubleshooting
 
 Indices and tables

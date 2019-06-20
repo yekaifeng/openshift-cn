@@ -1,0 +1,136 @@
+# Create an OSEv3 group that contains the masters, nodes, and etcd groups
+[OSEv3:children]
+masters
+nodes
+etcd
+
+# Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+#ansible_user=root
+ansible_ssh_user=root
+openshift_deployment_type=origin
+openshift_release="3.11"
+openshift_image_tag=v3.11.0
+openshift_pkg_version=-3.11.0
+#docker_version="1.13.1"
+
+openshift_hosted_registry_cert_expire_days=3650
+openshift_ca_cert_expire_days=3650
+openshift_node_cert_expire_days=3650
+openshift_master_cert_expire_days=3650
+etcd_ca_default_days=3650
+
+# let etcd installed as systemd service instead of static pod
+# l_etcd_static_pod=false
+
+debug_level=2
+
+# uncomment the following to enable htpasswd authentication; defaults to AllowAllPasswordIdentityProvider
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
+# openshift_master_htpasswd_users={'admin': 'changeme', 'readonly': 'changeme', 'developer': 'changeme'}
+
+openshift_disable_check=docker_storage,memory_availability,disk_availability,docker_image_availability
+openshift_master_cluster_method=native
+openshift_master_default_subdomain=apps.openshift.net.cn
+openshift_master_cluster_hostname=node01-inner
+openshift_master_cluster_public_hostname=portal.openshift.net.cn
+osm_cluster_network_cidr=10.128.0.0/16
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+openshift_portal_net=172.30.0.0/16
+
+openshift_master_api_port=8443
+openshift_master_console_port=8443
+
+# Disable selinux
+openshift_docker_selinux_enabled=false
+
+# Performance Imrove
+openshift_remove_all=true
+openshift_docker_options=--insecure-registry=docker-registry-default.apps.openshift.net.cn:443 --registry-mirror=https://5faearvf.mirror.aliyuncs.com --log-opt max-size=30M --log-opt max-file=10
+# openshift_docker_additional_registries=
+# openshift_docker_insecure_registries=
+
+
+# 安装metrics: 默认不安装
+openshift_metrics_install_metrics=true
+openshift_metrics_server_install=true
+#openshift_metrics_hawkular_hostname=hawkular-metrics.apps.openshift.net.cn
+#openshift_metrics_image_version=v3.11
+
+# 安装Prometheus operator
+#
+# Cluster monitoring is enabled by default, disable it by setting
+openshift_cluster_monitoring_operator_install=true
+#
+# Cluster monitoring configuration variables allow setting the amount of
+# storage and storageclass requested through PersistentVolumeClaims.
+#
+openshift_cluster_monitoring_operator_prometheus_storage_enabled=true
+openshift_cluster_monitoring_operator_alertmanager_storage_enabled=true
+
+openshift_cluster_monitoring_operator_prometheus_storage_capacity="2Gi"
+openshift_cluster_monitoring_operator_alertmanager_storage_capacity="1Gi"
+
+openshift_cluster_monitoring_operator_node_selector={'region/monitor':'true'}
+
+# external NFS support refer to Using Storage Classes for Existing Legacy Storage
+openshift_cluster_monitoring_operator_prometheus_storage_class_name="nfs"
+openshift_cluster_monitoring_operator_alertmanager_storage_class_name="nfs"
+
+
+# 安装Logging：默认不安装
+# 增加es cluster size, kibana node selector
+openshift_logging_install_logging=true
+openshift_logging_curator_nodeselector={'region/logging':'true'}
+openshift_logging_es_nodeselector={'region/logging':'true'}
+openshift_logging_kibana_nodeselector={'region/logging':'true'}
+openshift_logging_curator_run_timezone=Asia/Shanghai
+openshift_logging_es_memory_limit=4Gi
+openshift_logging_es_cluster_size=3
+openshift_logging_es_number_of_replicas=1
+openshift_logging_es_number_of_shards=3
+openshift_logging_kibana_replicas=1
+
+
+# 指定fluentd 定制打包的镜像，指定es, kibana镜像
+openshift_logging_elasticsearch_image=openshift/origin-logging-elasticsearch:v3.11.0
+openshift_logging_kibana_image=kennethye/origin-logging-kibana:v3.11.2
+openshift_logging_kibana_proxy_image=openshift/oauth-proxy:v1.0.0
+openshift_logging_fluentd_image=kennethye/origin-logging-fluentd:v3.9.2
+
+#openshift_master_logging_public_url=kibana.apps.openshift.net.cn
+#openshift_logging_kibana_hostname=kibana.apps.openshift.net.cn
+
+# Catalog：默认安装
+openshift_enable_service_catalog=true
+#openshift_service_catalog_image_prefix=openshift/origin-
+#openshift_service_catalog_image_version=latest
+
+ansible_service_broker_install=false
+
+# 安装 Cluster Console
+openshift_console_install=true
+
+# host group for masters
+# openshift_node_groups=[{'name': 'node-config-master', 'labels': ['node-role.kubernetes.io/master=true']}, {'name': 'node-config-infra', 'labels': ['node-role.kubernetes.io/infra=true']}, {'name': 'node-config-compute', 'labels': ['node-role.kubernetes.io/compute=true'], 'edits': [{ 'key': 'volumeConfig.localQuota','value': {'perFSGroup':'512Mi'}}]}]
+
+[masters]
+node01-inner
+
+# host group for etcd
+[etcd]
+node01-inner
+node02-inner
+node03-inner
+
+# host group for logging
+[logging]
+node01-inner
+node02-inner
+node03-inner
+
+# host group for nodes, includes region info
+[nodes]
+node01-inner openshift_node_group_name='node-config-master'
+node02-inner openshift_node_group_name='node-config-infra'
+node03-inner openshift_node_group_name='node-config-compute'

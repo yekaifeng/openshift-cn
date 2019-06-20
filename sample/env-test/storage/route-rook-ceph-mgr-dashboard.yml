@@ -1,0 +1,28 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  creationTimestamp: null
+  labels:
+    app: rook-ceph-mgr
+    rook_cluster: rook-ceph
+  name: rook-ceph-mgr-dashboard
+spec:
+  host: ceph-dashboard.apps.openshift.net.cn
+  port:
+    targetPort: https-dashboard
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: rook-ceph-mgr-dashboard
+    weight: 100
+  wildcardPolicy: None
+status:
+  ingress:
+  - conditions:
+    - lastTransitionTime: 2019-06-18T09:10:54Z
+      status: "True"
+      type: Admitted
+    host: ceph-dashboard.apps.openshift.net.cn
+    routerName: router
+    wildcardPolicy: None
