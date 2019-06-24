@@ -100,6 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="storage.html">存储模块</a></li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
 </ul>
 
@@ -308,7 +309,7 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 </ul>
 <p>五. 安装后集群配置优化</p>
 <ul class="simple">
-<li>修改node-config-compute, 增加kube-served, system-served预留资源</li>
+<li>修改node-config-compute, 增加kube-served, system-served预留资源, 调整容器,镜像垃圾回收大小阀值</li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-node</span>
     <span class="c1"># oc edit cm node-config-compute</span>
@@ -317,6 +318,12 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
         <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi” </span>
     <span class="n">system</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
         <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi&quot;</span>
+    <span class="n">maximum</span><span class="o">-</span><span class="n">dead</span><span class="o">-</span><span class="n">containers</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;5&quot;</span>
+    <span class="n">image</span><span class="o">-</span><span class="n">gc</span><span class="o">-</span><span class="n">high</span><span class="o">-</span><span class="n">threshold</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;95&quot;</span>
+    <span class="n">image</span><span class="o">-</span><span class="n">gc</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">threshold</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;85&quot;</span>
 </pre></div>
 </div>
 <ul class="simple">
