@@ -309,10 +309,12 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
 </ul>
 <p>五. 安装后集群配置优化</p>
 <ul class="simple">
-<li>修改node-config-compute, 增加kube-served, system-served预留资源, 调整容器,镜像垃圾回收大小阀值</li>
+<li>修改ConfigMap: node-config-compute和node-config-infra. 增加的配置有: kube-served, system-served预留资源,
+调整容器,镜像垃圾回收大小阀值, 节点pod最大数量</li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc project openshift-node</span>
     <span class="c1"># oc edit cm node-config-compute</span>
+    <span class="c1"># oc edit cm node-config-infra</span>
     <span class="n">kubeletArguments</span><span class="p">:</span> 
     <span class="n">kube</span><span class="o">-</span><span class="n">reserved</span><span class="p">:</span> 
         <span class="o">-</span> <span class="s2">&quot;cpu=200m,memory=512Mi” </span>
@@ -324,6 +326,8 @@ RHEL Atomic Host 则以容器镜像形式部署.</p>
     <span class="o">-</span> <span class="s2">&quot;95&quot;</span>
     <span class="n">image</span><span class="o">-</span><span class="n">gc</span><span class="o">-</span><span class="n">low</span><span class="o">-</span><span class="n">threshold</span><span class="p">:</span>
     <span class="o">-</span> <span class="s2">&quot;85&quot;</span>
+    <span class="n">pods</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">core</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;10&quot;</span>
 </pre></div>
 </div>
 <ul class="simple">

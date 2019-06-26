@@ -144,11 +144,13 @@ RHEL Atomic Host 则以容器镜像形式部署.
 * 访问控制台,检查是否安装成功 **https://portal.openshift.net.cn:8443/**
 
 五. 安装后集群配置优化
-* 修改node-config-compute, 增加kube-served, system-served预留资源, 调整容器,镜像垃圾回收大小阀值
+* 修改ConfigMap: node-config-compute和node-config-infra. 增加的配置有: kube-served, system-served预留资源, 
+调整容器,镜像垃圾回收大小阀值, 节点pod最大数量
 
 ~~~
     # oc project openshift-node
     # oc edit cm node-config-compute
+    # oc edit cm node-config-infra
     kubeletArguments: 
     kube-reserved: 
         - "cpu=200m,memory=512Mi” 
@@ -160,6 +162,8 @@ RHEL Atomic Host 则以容器镜像形式部署.
     - "95"
     image-gc-low-threshold:
     - "85"
+    pods-per-core:
+    - "10"
 ~~~
 
 * 把 master-api资源分配改为burstable模式, 以保证这个pod在资源不足情况仍然正常工作
