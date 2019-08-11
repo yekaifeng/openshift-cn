@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="问题汇总及解决方法" href="troubleshooting.html" />
+    <link rel="next" title="存储模块" href="storage.html" />
     <link rel="prev" title="监控模块" href="openshift-monitor.html" /> 
 </head>
 
@@ -93,8 +93,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#jenkins-slavejekinks">添加jenkins slave进入jekinks集群步骤</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#id1">搭建业务应用流水线</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#openshit">让业务应用流水线展示在Openshit页面上</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#openshift-jenkins-pipeline">使用原生openshift jenkins pipeline</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="storage.html">存储模块</a></li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
 </ul>
 
@@ -374,6 +376,17 @@
 </ul>
 <p><img alt="../_images/pipeline-in-bc.png" src="../_images/pipeline-in-bc.png" />Build Process</p>
 </div>
+<div class="section" id="openshift-jenkins-pipeline">
+<h2>使用原生openshift jenkins pipeline<a class="headerlink" href="#openshift-jenkins-pipeline" title="Permalink to this headline">¶</a></h2>
+<p>每个项目中分别创建的jenkins-ephermal / jenkins-persistent 实例，可以专注执行当前项目的流水线。
+每次构建jenkins master会临时启动一个jenkisn-agent-maven作为slave执行流水线， 支持的操作有
+maven build, docker build (by Dockerfile), 推送镜像到内部/外部仓库， 创建部署， rolling 更新部署，
+创建template等等。</p>
+<p>以下为例子， 可以构建ft-rest-service (一个spring boot应用）从源码到部署的整个过程。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># oc create -f openshift-cn/sample/env-test/cicd/maven-pipeline-ft-rest-service.yml</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -384,7 +397,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="troubleshooting.html" class="btn btn-neutral float-right" title="问题汇总及解决方法" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="storage.html" class="btn btn-neutral float-right" title="存储模块" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="openshift-monitor.html" class="btn btn-neutral float-left" title="监控模块" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

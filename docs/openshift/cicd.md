@@ -211,6 +211,17 @@
 
 ![Build Process](../_static/pipeline-in-bc.png)
 
+### 使用原生openshift jenkins pipeline
+每个项目中分别创建的jenkins-ephermal / jenkins-persistent 实例，可以专注执行当前项目的流水线。
+每次构建jenkins master会临时启动一个jenkisn-agent-maven作为slave执行流水线， 支持的操作有
+maven build, docker build (by Dockerfile), 推送镜像到内部/外部仓库， 创建部署， rolling 更新部署，
+创建template等等。
+
+以下为例子， 可以构建ft-rest-service (一个spring boot应用）从源码到部署的整个过程。
+
+~~~
+    # oc create -f openshift-cn/sample/env-test/cicd/maven-pipeline-ft-rest-service.yml
+~~~
 
 
 
