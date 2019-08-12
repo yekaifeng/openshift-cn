@@ -80,12 +80,11 @@ objects:
     strategy:
       jenkinsPipelineStrategy:
         jenkinsfile: |-
-          def tagVersionSubfix = ""
           try {
              timeout(time: 20, unit: 'MINUTES') {
                 def appName="${APP_NAME}"
                 def project=""
-
+                def tagVersionSubfix = ""
                 node {
                   stage("Initialize") {
                     project = env.PROJECT_NAME
@@ -107,7 +106,7 @@ objects:
                 node {
                   stage("Build Image") {
                     unstash name:"jar"
-                    sh "oc start-build ${appName}-docker --from-file=target/gs-rest-service.jar -n ${project}"
+                    sh "start-build ${appName}-docker --from-file=target/gs-rest-service.jar -n ${project}"
                     openshiftVerifyBuild bldCfg: "${appName}-docker", namespace: project, waitTime: '20', waitUnit: 'min'
                   }
                   stage("Deploy") {
@@ -159,6 +158,8 @@ objects:
         USER root
         EXPOSE 8800
         COPY gs-rest-service.jar /deployments/${JAVA_APP_JAR}
+        COPY versionfile /deployments
+        LABEL org.app="gs-rest-service"
         CMD $STI_SCRIPTS_PATH/run
         RUN chown -R jboss /deployments/${JAVA_APP_JAR} \
           && chmod -R "g+rwX" /deployments/${JAVA_APP_JAR}\
