@@ -16,6 +16,7 @@ Welcome to openshift-cn's documentation!
    openshift/openshift-monitor
    openshift/cicd
    openshift/storage
+   openshift/middleware
    openshift/troubleshooting
 
 Indices and tables

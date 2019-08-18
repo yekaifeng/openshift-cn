@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"StatefulSet","metadata":{"annotations":{},"name":"redis-cluster","namespace":"smsapplet"},"spec":{"replicas":6,"selector":{"matchLabels":{"app":"redis-cluster"}},"serviceName":"redis-cluster","template":{"metadata":{"labels":{"app":"redis-cluster"}},"spec":{"containers":[{"command":["/conf/update-node.sh","redis-server","/conf/redis.conf"],"env":[{"name":"POD_IP","valueFrom":{"fieldRef":{"fieldPath":"status.podIP"}}}],"image":"redis:5.0.1-alpine","name":"redis","ports":[{"containerPort":6379,"name":"client"},{"containerPort":16379,"name":"gossip"}],"volumeMounts":[{"mountPath":"/conf","name":"conf","readOnly":false},{"mountPath":"/data","name":"data","readOnly":false}]}],"volumes":[{"configMap":{"defaultMode":493,"name":"redis-cluster"},"name":"conf"}]}},"volumeClaimTemplates":[{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}}}}]}}
+  creationTimestamp: null
+  generation: 1
+  name: redis-cluster
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 6
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: redis-cluster
+  serviceName: redis-cluster
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - command:
+        - /conf/update-node.sh
+        - redis-server
+        - /conf/redis.conf
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        image: redis:5.0.1-alpine
+        imagePullPolicy: IfNotPresent
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: client
+          protocol: TCP
+        - containerPort: 16379
+          name: gossip
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /conf
+          name: conf
+        - mountPath: /data
+          name: data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 493
+          name: redis-cluster
+        name: conf
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

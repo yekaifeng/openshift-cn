@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>中间件 &mdash; openshift-cn 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="问题汇总及解决方法" href="troubleshooting.html" />
+    <link rel="prev" title="存储模块" href="storage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> openshift-cn
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">openshift 集群安装</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">openshift 集群配置管理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-logging.html">日志模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openshift-monitor.html">监控模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cicd.html">CI/CD 模块</a></li>
+<li class="toctree-l1"><a class="reference internal" href="storage.html">存储模块</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">中间件</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#redis">安装Redis 集群</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">问题汇总及解决方法</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">openshift-cn</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>中间件</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/openshift/middleware.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>中间件<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="redis">
+<h2>安装Redis 集群<a class="headerlink" href="#redis" title="Permalink to this headline">¶</a></h2>
+<p>容器化Redis有单机版，集群模式，哨兵模式。Spring Boot应用针对不同模式有对应的代码库，使用不同的模式不能通过
+配置自由切换，需要修改代码支持。RedisLab仅提供哨兵模式，没有集群模式。
+以下为集群模式安装例子。</p>
+<ul class="simple">
+<li>ConfigMap中初始化密码</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>     # vi sample/env-test/middleware/cm-redis-cluster.yml
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: redis-cluster
+        data:
+          update-node.sh: |
+            #!/bin/sh
+            REDIS_NODES=&quot;/data/nodes.conf&quot;
+            sed -i -e &quot;/myself/ s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${POD_IP}/&quot; ${REDIS_NODES}
+            exec &quot;$@&quot;
+          redis.conf: |+
+            cluster-enabled yes
+            cluster-require-full-coverage no
+            cluster-node-timeout 15000
+            cluster-config-file /data/nodes.conf
+            cluster-migration-barrier 1
+            appendonly yes
+            protected-mode no
+            requirepass redis123    # 设置密码保护
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建Redis Cluster Statefulset, 这里共有6个实例，两两主备。16384个哈希槽(hash slot) 被平均分配到三个主里。</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>     <span class="c1"># oc create -f sample/env-test/middleware/cm-redis-cluster.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>创建 Headerless Service, 使每个Redis实例能够以内部域名直接访问</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>     <span class="c1"># vi sample/env-test/middleware/svc-redis-cluster.yml</span>
+        <span class="n">apiVersion</span><span class="p">:</span> <span class="n">v1</span>
+        <span class="n">kind</span><span class="p">:</span> <span class="n">Service</span>
+        <span class="n">metadata</span><span class="p">:</span>
+          <span class="n">name</span><span class="p">:</span> <span class="n">redis</span><span class="o">-</span><span class="n">cluster</span>
+        <span class="n">spec</span><span class="p">:</span>
+          <span class="n">clusterIP</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># Headless Service</span>
+          <span class="n">ports</span><span class="p">:</span>
+          <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">client</span>
+            <span class="n">port</span><span class="p">:</span> <span class="mi">6379</span>
+            <span class="n">protocol</span><span class="p">:</span> <span class="n">TCP</span>
+            <span class="n">targetPort</span><span class="p">:</span> <span class="mi">6379</span>
+          <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">gossip</span>
+            <span class="n">port</span><span class="p">:</span> <span class="mi">16379</span>
+            <span class="n">protocol</span><span class="p">:</span> <span class="n">TCP</span>
+            <span class="n">targetPort</span><span class="p">:</span> <span class="mi">16379</span>
+          <span class="n">selector</span><span class="p">:</span>
+            <span class="n">app</span><span class="p">:</span> <span class="n">redis</span><span class="o">-</span><span class="n">cluster</span>
+          <span class="n">sessionAffinity</span><span class="p">:</span> <span class="kc">None</span>
+          <span class="nb">type</span><span class="p">:</span> <span class="n">ClusterIP</span>
+     <span class="c1"># oc create -f sample/env-test/middleware/svc-redis-cluster.yml</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>在spring boot配置中，修改redis host的访问地址</li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="n">spring</span><span class="o">.</span><span class="n">redis</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="mi">30000</span>
+        <span class="n">spring</span><span class="o">.</span><span class="n">redis</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">redis123</span>
+        <span class="c1"># 以逗号分割的redis集群节点配置，格式：host:port，</span>
+        <span class="n">spring</span><span class="o">.</span><span class="n">redis</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">nodes</span><span class="o">=</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">0.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span><span class="p">,</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">1.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span><span class="p">,</span>
+        <span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">2.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span><span class="p">,</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">3.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span><span class="p">,</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">4.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span><span class="p">,</span>
+        <span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="o">-</span><span class="mf">5.</span><span class="n">redis</span><span class="o">-</span><span class="n">cluster</span><span class="p">:</span><span class="mi">6379</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>参考<a class="reference external" href="https://rancher.com/blog/2019/deploying-redis-cluster/">资料</a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="troubleshooting.html" class="btn btn-neutral float-right" title="问题汇总及解决方法" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="storage.html" class="btn btn-neutral float-left" title="存储模块" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, kennethy
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

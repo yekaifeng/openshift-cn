@@ -37,15 +37,15 @@ parameters:
   name: GENERIC_WEBHOOK_SECRET
   required: true
 objects:
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      app: ${APP_NAME}
-    name: ${APP_NAME}
-  spec: {}
-  status:
-    dockerImageRepository: ""
+#- apiVersion: v1
+#  kind: ImageStream
+#  metadata:
+#    labels:
+#      app: ${APP_NAME}
+#    name: ${APP_NAME}
+#  spec: {}
+#  status:
+#    dockerImageRepository: ""
 - apiVersion: v1
   kind: ImageStream
   metadata:
@@ -133,10 +133,11 @@ objects:
       app: ${APP_NAME}-docker
     name: ${APP_NAME}-docker
   spec:
+    # Push image to external docker registry
     output:
       to:
-        kind: ImageStreamTag
-        name: ${APP_NAME}:latest
+        kind: DockerImage
+        name: registry.dev.ht.paas.cmic.cn:5000/smsapplet/${APP_NAME}:latest
     postCommit: {}
     resources: {}
     runPolicy: Serial
@@ -239,8 +240,8 @@ objects:
         containerNames:
         - ${APP_NAME}
         from:
-          kind: ImageStreamTag
-          name: ${APP_NAME}:latest
+          kind: DockerImage
+          name: registry.dev.ht.paas.cmic.cn:5000/smsapplet/${APP_NAME}:latest
       type: ImageChange
   status: {}
 - apiVersion: v1
