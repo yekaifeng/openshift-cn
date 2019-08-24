@@ -72,6 +72,25 @@ openshift docker registry 默认安装使用empty volume, 容器重启镜像信�
     # oc scale dc docker-registry --replicas=1
 ~~~
 
+### 配置项目访问外部带安全验证的镜像仓库
+每个项目都要单独配置
+- 创建image pull secret。带有镜像仓库登陆信息。使用红帽registry的话，建议用registry service account。
+
+~~~
+    # oc project hyperion
+    # oc create secret docker-registry hyperion-pull-secret \
+        --docker-server=registry.redhat.io \
+        --docker-username=<user_name> \
+        --docker-password=<password> \
+        --docker-email=<email>
+~~~
+
+- 把secret连接到default service account, 使当前项目默认使用default sa来运行pod, 并下载镜像。
+
+~~~
+    # oc secrets link default hyperion-pull-secret --for=pull
+~~~
+
 
 
 

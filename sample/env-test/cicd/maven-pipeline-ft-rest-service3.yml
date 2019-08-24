@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: maven-pipeline-ft-rest-service
+  name: maven-pipeline-gs-rest-service
   annotations:
-    openshift.io/display-name: maven-pipeline-ft-rest-service
+    openshift.io/display-name: maven-pipeline-gs-rest-service
     tags: "spring,demo"
     iconClass: icon-spring
-    description: "maven-pipeline-ft-rest-service template"
+    description: "maven-pipeline-gs-rest-service template"
     openshift.io/provider-display-name: KennethYe
 parameters:
 - name: APP_NAME
@@ -64,29 +64,32 @@ objects:
       app: ${APP_NAME}
     name: ${APP_NAME}
   spec: {}
-#  status:
-#    dockerImageRepository: ""
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    name: java-centos-openjdk8-jdk
+    name: openjdk18-openshift
   spec:
     tags:
     - annotations:
-        supports: openjdk8:1.6.3,java
-        tags: builder,openjdk8,java
-        version: "1.6.3"
+        supports: 'openjdk8,java'
+        tags: 'builder,openjdk8,java'
       from:
         kind: DockerImage
-        name: fabric8/java-centos-openjdk8-jdk:1.6.3
-      name: "1.6.3"
+        name: registry.redhat.io/redhat-openjdk-18/openjdk18-openshift
+      importPolicy: {}
+      name: 1.6-23
+      referencePolicy:
+        type: Source
     - annotations:
-        supports: openjdk8,java
-        tags: builder,openjdk8,java
+        supports: 'openjdk8,java'
+        tags: 'builder,openjdk8,java'
       from:
         kind: ImageStreamTag
-        name: "1.6.3"
+        name: 1.6-23
+      importPolicy: {}
       name: latest
+      referencePolicy:
+        type: Source
 - apiVersion: v1
   kind: BuildConfig
   metadata:
@@ -168,7 +171,7 @@ objects:
     runPolicy: Serial
     source:
       dockerfile: |-
-        FROM java-centos-openjdk8-jdk
+        FROM openjdk18-openshift
         MAINTAINER Kennethy <yekaifeng@tom.com>
         ENV JAVA_OPTIONS="-Xmx1024m -Xms1024m -XX:NewRatio=1 -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 \
         -XX:+UseCMSInitiatingOccupancyOnly -XX:ReservedCodeCacheSize=128M -XX:ParallelGCThreads=2 \
@@ -182,9 +185,9 @@ objects:
           && chown -R jboss:root /deployments/${JAVA_APP_JAR}
         USER jboss
         WORKDIR ${JAVA_APP_DIR}
-        ENTRYPOINT [ "/deployments/run-java.sh", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}" ]
+        ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}" ]
       binary:
-        asFile: gs-rest-service.jar
+        asFile: ft-rest-service.jar
       type: Docker
     strategy:
       dockerStrategy:
