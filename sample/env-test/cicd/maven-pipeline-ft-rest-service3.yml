@@ -177,6 +177,7 @@ objects:
         -XX:+UseCMSInitiatingOccupancyOnly -XX:ReservedCodeCacheSize=128M -XX:ParallelGCThreads=2 \
         -XX:+ExplicitGCInvokesConcurrent -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom"
         ENV JAVA_APP_JAR="gs-rest-service.jar"
+        ENV JAVA_APP_DIR="/deployments"
         USER root
         EXPOSE 8800
         COPY gs-rest-service.jar /deployments/${JAVA_APP_JAR}
@@ -193,7 +194,7 @@ objects:
       dockerStrategy:
         from:
           kind: ImageStreamTag
-          name: java-centos-openjdk8-jdk:latest
+          name: openjdk18-openshift:latest
       type: Docker
     triggers: []
 - apiVersion: v1
