@@ -1,0 +1,9 @@
+FROM openshift/origin-logging-fluentd:v3.11.0
+
+RUN rpmkeys --import file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 && \
+    yum install -y --setopt=tsflags=nodocs \
+    patch && \
+    gem install -N --conservative --minimal-deps --no-ri --no-doc \
+	'serverengine:1.6.4' \
+	'fluent-plugin-kafka:0.1.5' \
+	'fluent-plugin-detect-exceptions:0.0.11'
