@@ -1,0 +1,4 @@
+FROM kennethye/origin-logging-fluentd:v3.9.2
+
+RUN gem install -N --conservative --minimal-deps --no-ri --no-doc \
+	'fluent-plugin-kafka:<=0.12.0'

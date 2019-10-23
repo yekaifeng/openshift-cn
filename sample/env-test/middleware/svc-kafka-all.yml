@@ -1,0 +1,64 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: 2019-07-11T08:31:21Z
+    labels:
+      app: apache-kafka
+    name: apache-kafka
+    namespace: kafka
+    resourceVersion: "15361608"
+    selfLink: /api/v1/namespaces/kafka/services/apache-kafka
+    uid: 42e78bff-a3b6-11e9-ad67-00163e008c59
+  spec:
+    clusterIP: None
+    ports:
+    - name: kafka
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
+    - name: zookeeper
+      port: 2181
+      protocol: TCP
+      targetPort: 2181
+    selector:
+      deploymentconfig: apache-kafka
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: 2019-08-30T05:44:44Z
+    labels:
+      app: apache-kafka2
+    name: apache-kafka2
+    namespace: kafka
+    resourceVersion: "22656498"
+    selfLink: /api/v1/namespaces/kafka/services/apache-kafka2
+    uid: 44c50a65-cae9-11e9-b802-528505e663c6
+  spec:
+    clusterIP: None
+    ports:
+    - name: kafka
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
+    - name: zookeeper
+      port: 2181
+      protocol: TCP
+      targetPort: 2181
+    selector:
+      deploymentconfig: apache-kafka2
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

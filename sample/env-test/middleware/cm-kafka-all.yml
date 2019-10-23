@@ -1,0 +1,78 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    kafka_server_jaas.conf: |
+      KafkaServer {
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="admin"
+        password="12345"
+        user_admin="12345";
+      };
+    server.properties: "############################# Server Basics #############################\n\n#
+      The id of the broker. This must be set to a unique integer for each broker.\nbroker.id=0\n\n#
+      Switch to enable topic deletion or not, default value is false\n#delete.topic.enable=true\n\n#############################
+      Socket Server Settings #############################\n\n# The address the socket
+      server listens on. It will get the value returned from \n# java.net.InetAddress.getCanonicalHostName()
+      if not configured.\n#   FORMAT:\n#     listeners = security_protocol://host_name:port\n#
+      \  EXAMPLE:\n#     listeners = PLAINTEXT://your.host.name:9092\n#listeners=PLAINTEXT://:9092\n\n#
+      Hostname and port the broker will advertise to producers and consumers. If not
+      set, \n# it uses the value for \"listeners\" if configured.  Otherwise, it will
+      use the value\n# returned from java.net.InetAddress.getCanonicalHostName().\n#advertised.listeners=PLAINTEXT://your.host.name:9092\n\n#
+      The number of threads handling network requests\nnum.network.threads=3\n\n#
+      The number of threads doing disk I/O\nnum.io.threads=8\n\n# The send buffer
+      (SO_SNDBUF) used by the socket server\nsocket.send.buffer.bytes=102400\n\n#
+      The receive buffer (SO_RCVBUF) used by the socket server\nsocket.receive.buffer.bytes=102400\n\n#
+      The maximum size of a request that the socket server will accept (protection
+      against OOM)\nsocket.request.max.bytes=104857600\n\n\n#############################
+      Log Basics #############################\n\n# A comma seperated list of directories
+      under which to store log files\nlog.dirs=/tmp/kafka-logs\n\n# The default number
+      of log partitions per topic. More partitions allow greater\n# parallelism for
+      consumption, but this will also result in more files across\n# the brokers.\nnum.partitions=1\n\n#
+      The number of threads per data directory to be used for log recovery at startup
+      and flushing at shutdown.\n# This value is recommended to be increased for installations
+      with data dirs located in RAID array.\nnum.recovery.threads.per.data.dir=1\n\n#############################
+      Log Flush Policy #############################\n\n# Messages are immediately
+      written to the filesystem but by default we only fsync() to sync\n# the OS cache
+      lazily. The following configurations control the flush of data to disk.\n# There
+      are a few important trade-offs here:\n#    1. Durability: Unflushed data may
+      be lost if you are not using replication.\n#    2. Latency: Very large flush
+      intervals may lead to latency spikes when the flush does occur as there will
+      be a lot of data to flush.\n#    3. Throughput: The flush is generally the most
+      expensive operation, and a small flush interval may lead to exceessive seeks.\n#
+      The settings below allow one to configure the flush policy to flush data after
+      a period of time or\n# every N messages (or both). This can be done globally
+      and overridden on a per-topic basis.\n\n# The number of messages to accept before
+      forcing a flush of data to disk\n#log.flush.interval.messages=10000\n\n# The
+      maximum amount of time a message can sit in a log before we force a flush\n#log.flush.interval.ms=1000\n\n#############################
+      Log Retention Policy #############################\n\n# The following configurations
+      control the disposal of log segments. The policy can\n# be set to delete segments
+      after a period of time, or after a given size has accumulated.\n# A segment
+      will be deleted whenever *either* of these criteria are met. Deletion always
+      happens\n# from the end of the log.\n\n# The minimum age of a log file to be
+      eligible for deletion\nlog.retention.hours=168\n\n# A size-based retention policy
+      for logs. Segments are pruned from the log as long as the remaining\n# segments
+      don't drop below log.retention.bytes.\n#log.retention.bytes=1073741824\n\n#
+      The maximum size of a log segment file. When this size is reached a new log
+      segment will be created.\nlog.segment.bytes=1073741824\n\n# The interval at
+      which log segments are checked to see if they can be deleted according\n# to
+      the retention policies\nlog.retention.check.interval.ms=300000\n\n#############################
+      Zookeeper #############################\n\n# Zookeeper connection string (see
+      zookeeper docs for details).\n# This is a comma separated host:port pairs, each
+      corresponding to a zk\n# server. e.g. \"127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002\".\n#
+      You can also append an optional chroot string to the urls to specify the\n#
+      root directory for all kafka znodes.\nzookeeper.connect=localhost:2181\n\n#
+      Timeout in ms for connecting to zookeeper\nzookeeper.connection.timeout.ms=6000\n\n#
+      AUTH\n\nsecurity.inter.broker.protocol=SASL_PLAINTEXT\nsasl.mechanism.inter.broker.protocol=PLAIN\nsasl.enabled.mechanisms=PLAIN\n\nauthorizer.class.name=kafka.security.auth.SimpleAclAuthorizer\nallow.everyone.if.no.acl.found=true\nlisteners=SASL_PLAINTEXT://0.0.0.0:9092\nadvertised.listeners=SASL_PLAINTEXT://apache-kafka2.kafka.svc:9092\n"
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: 2019-10-22T11:16:56Z
+    name: kafka-server-jaas
+    namespace: kafka
+    resourceVersion: "35839593"
+    selfLink: /api/v1/namespaces/kafka/configmaps/kafka-server-jaas
+    uid: 7524e27e-f4bd-11e9-808a-00163e008c59
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
