@@ -1,0 +1,6 @@
+FROM kennethye/origin-logging-fluentd:v3.9.2
+
+# Add support kafka sasl plaintext forwarding based on ocp 3.9 customized image
+RUN gem install -N --conservative --no-ri --no-doc \
+        'ruby-kafka:<=0.5.5' \
+	'fluent-plugin-kafka:<=0.7.9'

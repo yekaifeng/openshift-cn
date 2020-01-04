@@ -1,0 +1,53 @@
+FROM registry.redhat.io/rhscl/ruby-25-rhel7 AS builder
+# Add support kafka sasl plaintext forwarding based on ocp 4.2 fluentd image
+
+ENV SOURCE_GIT_COMMIT=82cd5e8b710803bdff7900a5bdc4b60f4b4f14ac SOURCE_DATE_EPOCH=1574959202 BUILD_VERSION=v4.2.11 SOURCE_GIT_URL=https://github.com/openshift/origin-aggregated-logging SOURCE_GIT_TAG=82cd5e8 BUILD_RELEASE=201912100122
+MAINTAINER OpenShift Development <dev@lists.openshift.redhat.com>
+ENV DATA_VERSION=1.6.0 \
+    FLUENTD_VERSION=1.7.0 \
+    HOME=/opt/app-root/src \
+    PATH=/opt/app-root/src/bin:/opt/app-root/bin:$PATH \
+    LOGGING_FILE_PATH=/var/log/fluentd/fluentd.log \
+    LOGGING_FILE_AGE=10 \
+    LOGGING_FILE_SIZE=1024000 \
+    container=oci
+ARG TEST_REPO
+#ADD test.repo /etc/yum.repos.d
+USER 0
+RUN : 'removed yum-config-manager' \
+ &&   INSTALL_PKGS="make gcc-c++ libffi-devel       autoconf automake libtool m4       redhat-rpm-config" \
+ &&   yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS \
+ &&   rpm -V $INSTALL_PKGS \
+ &&   yum clean all
+# uncomment if you want to try out test rpm builds
+#ADD *.rpm /tmp/
+#RUN yum -y install /tmp/*.rpm
+ADD jemalloc/ ${HOME}/jemalloc/
+RUN cd ${HOME}/jemalloc && EXTRA_CFLAGS="$( rpm --eval '%{optflags}' )" ./autogen.sh && \
+    make install_lib_shared install_bin && cp COPYING ${HOME}/COPYING.jemalloc && \
+    cd .. && rm -rf jemalloc
+ADD source.jemalloc /source.jemalloc
+RUN bash -c '. /source.jemalloc; echo jemalloc $JEMALLOC_VER >> /contents'
+ADD vendored_gem_src/ ${HOME}/vendored_gem_src/
+ADD install-gems.sh *.patch.sh *.patch ${HOME}/vendored_gem_src/
+RUN cd ${HOME}/vendored_gem_src/ && ./install-gems.sh && cd / && rm -rf ${HOME}/vendored_gem_src/
+
+FROM registry.redhat.io/openshift4/ose-logging-fluentd:v4.2.11-201912100122
+USER 0
+
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/fluent-plugin-kafka-0.7.9 /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/fluent-plugin-kafka-0.7.9
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/ruby-kafka-0.5.5 /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/ruby-kafka-0.5.5
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/ltsv-0.1.2 /opt/rh/rh-ruby25/root/usr/local/share/gems/gems/ltsv-0.1.2
+
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/fluent-plugin-kafka-0.7.9.gemspec /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/ruby-kafka-0.5.5.gemspec /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/
+COPY --from=builder /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/ltsv-0.1.2.gemspec /opt/rh/rh-ruby25/root/usr/local/share/gems/specifications/
+
+RUN bash -c 'echo "fluent-plugin-kafka 0.7.9" >> /contents && \
+    echo "ruby-kafka 0.5.5" >> /contents && \
+    echo "ltsv 0.1.2" >> /contents'
+
+LABEL release="201912100122-cmic"
+
+
+
